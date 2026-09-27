@@ -40,7 +40,7 @@ export function CoverPhoto({ uri, title }) {
   );
 }
 
-export function TitleCard({ c }) {
+export function TitleCard({ c, t }) {
   return (
     <View style={s.card}>
       <View style={s.rowBetween}>
@@ -55,19 +55,19 @@ export function TitleCard({ c }) {
         <Text style={s.cert}>🏆  {c.certificateNote}</Text>
       </View>
       <View style={s.statsRow}>
-        <View style={s.statCol}><Text style={s.lbl}>Prize Pool</Text><Text style={s.prize}>₹ {Number(c.prizePool).toLocaleString("en-IN")}</Text></View>
-        <View style={s.statCol}><Text style={s.lbl}>Entry Fee</Text><Text style={s.fee}>₹ {c.entryFee}</Text></View>
+        <View style={s.statCol}><Text style={s.lbl}>{t("prizePool")}</Text><Text style={s.prize}>₹ {Number(c.prizePool).toLocaleString("en-IN")}</Text></View>
+        <View style={s.statCol}><Text style={s.lbl}>{t("entryFee")}</Text><Text style={s.fee}>₹ {c.entryFee}</Text></View>
         <View style={{ flex: 1, paddingLeft: 12 }}>
-          <Text style={s.spots}>👥  Only {c.spotsLeft} spots left</Text>
+          <Text style={s.spots}>👥  {t("spotsLeft", { n: c.spotsLeft })}</Text>
           <View style={s.bar}><View style={[s.barFill, { width: `${Math.min(100, (c.bookedSpots / Math.max(1, c.capacity)) * 100)}%` }]} /></View>
-          <Text style={s.booked}>{c.bookedSpots} / {c.capacity} Booked</Text>
+          <Text style={s.booked}>{t("booked", { a: c.bookedSpots, b: c.capacity })}</Text>
         </View>
       </View>
     </View>
   );
 }
 
-export function JudgeCard({ c, onPlay }) {
+export function JudgeCard({ c, t, onPlay }) {
   const [imgFailed, setImgFailed] = useState(false);
   return (
     <View style={s.card}>
@@ -78,28 +78,29 @@ export function JudgeCard({ c, onPlay }) {
           <View style={s.avatar}><Text style={{ fontSize: 28 }}>👩🏽</Text></View>
         )}
         <View style={{ flex: 1 }}>
-          <Text style={s.lbl}>Judge</Text>
+          <Text style={s.lbl}>{t("judge")}</Text>
           <Text style={s.judgeName}>{c.judge.name}</Text>
           <Text style={s.muted}>{c.judge.bio}</Text>
           <Text style={s.muted}>{c.judge.experience}</Text>
+          <Text style={s.demoMini}>{t("demoPhoto")}</Text>
         </View>
-        <TouchableOpacity style={{ alignItems: "center" }} onPress={onPlay}>
+        <TouchableOpacity style={{ alignItems: "center" }} onPress={onPlay} accessibilityRole="button" accessibilityLabel={t("introVideo")}>
           <View style={s.play}><Text style={{ color: TEAL }}>▶</Text></View>
-          <Text style={s.muted}>Intro Video</Text>
+          <Text style={s.muted}>{t("introVideo")}</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-export function CountdownBar({ ms, onExpiry }) {
+export function CountdownBar({ ms, t, onExpiry }) {
   const left = useCountdown(ms, onExpiry);
   return (
     <View style={s.countBar}>
       <View style={s.countRow}>
         <Text>⏳</Text>
-        <Text style={s.countLbl}>Registration closes in</Text>
-        <Text style={s.hurry}>⏱ Hurry up!</Text>
+        <Text style={s.countLbl}>{t("regClosesIn")}</Text>
+        <Text style={s.hurry}>⏱ {t("hurry")}</Text>
       </View>
       <Text style={s.countT}>{formatMs(left)}</Text>
     </View>
@@ -108,10 +109,10 @@ export function CountdownBar({ ms, onExpiry }) {
 
 export function DatesGrid({ c, t }) {
   const cells = [
-    ["Register Before", c.dates.registerBefore],
-    ["Submission Starts", c.dates.submissionStarts],
-    ["Submission Ends", c.dates.submissionEnds],
-    ["Result Date", c.dates.resultDate],
+    [t("registerBefore"), c.dates.registerBefore],
+    [t("submissionStarts"), c.dates.submissionStarts],
+    [t("submissionEnds"), c.dates.submissionEnds],
+    [t("resultDate"), c.dates.resultDate],
   ];
   return (
     <View style={s.card}>
@@ -138,7 +139,7 @@ export function WinnersRow({ c, t, onPlay }) {
       <Text style={s.secT}>{t("previousWinners")}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {(c.previousWinners || []).length === 0 && (
-          <Text style={s.muted}>Winners will be announced after results.</Text>
+          <Text style={s.muted}>{t("winnersSoon")}</Text>
         )}
         {(c.previousWinners || []).map((w, i) => (
           <WinnerThumb key={i} w={w} onPlay={onPlay} />
@@ -186,10 +187,17 @@ export function InfoTabs({ c, t }) {
       </ScrollView>
       {tab === "about" && (
         <Text style={s.muted}>{c.about}{more ? c.aboutMore : ""}{" "}
-          <Text style={s.link} onPress={() => setMore(!more)}>{more ? "View less ▲" : "View more ▼"}</Text>
+          <Text style={s.link} onPress={() => setMore(!more)}>{more ? t("viewLess") : t("viewMore")}</Text>
         </Text>
       )}
-      {tab === "judge" && (c.judgingParameters || []).map((p, i) => <Text key={i} style={s.muted}>• {p}</Text>)}
+      {tab === "judge" && (c.judgingParameters || []).map((p, i) => (
+        <View key={i} style={s.param}>
+          <Text style={s.paramName}>
+            {typeof p === "string" ? p : p.name}{typeof p !== "string" && p.weight != null ? ` — ${p.weight}%` : ""}
+          </Text>
+          {typeof p !== "string" && !!p.description && <Text style={s.muted}>{p.description}</Text>}
+        </View>
+      ))}
       {tab === "rules" && (c.rules || []).map((p, i) => <Text key={i} style={s.muted}>• {p}</Text>)}
     </View>
   );
@@ -209,16 +217,16 @@ export function Rewards({ c, t }) {
   );
 }
 
-export function PrizeMoneyCard({ onPrizeVideo }) {
+export function PrizeMoneyCard({ t, onPrizeVideo }) {
   return (
     <View style={s.row2}>
-      <TouchableOpacity style={[s.card, { flex: 1 }]} onPress={onPrizeVideo} accessibilityRole="button" accessibilityLabel="How you will receive prize money">
-        <Text style={s.secT}>▶  How will you receive prize money?</Text>
-        <Text style={s.muted}>Watch video to know more</Text>
+      <TouchableOpacity style={[s.card, { flex: 1 }]} onPress={onPrizeVideo} accessibilityRole="button" accessibilityLabel={t("prizeTitle")}>
+        <Text style={s.secT}>▶  {t("prizeTitle")}</Text>
+        <Text style={s.muted}>{t("prizeSub")}</Text>
       </TouchableOpacity>
       <View style={[s.card, { flex: 1 }]}>
-        <Text style={s.secT}>🛡 Refund policy</Text>
-        <Text style={s.muted}>🛡 Secure payments powered by</Text>
+        <Text style={s.secT}>🛡 {t("refundTitle")}</Text>
+        <Text style={s.muted}>🛡 {t("secureBy")}</Text>
         <Text style={{ fontWeight: "800", color: INK }}>Razorpay <Text style={s.demoTag}>DEMO/MOCK</Text></Text>
         <Text style={s.muted}>No secrets in app — backend verifies.</Text>
       </View>
@@ -236,7 +244,7 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned, on
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      setCopyError("Copy failed — long-press the link to copy manually.");
+      setCopyError(t("copyFail"));
     }
   };
   const share = async () => {
@@ -252,15 +260,15 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned, on
       {!!code && <Text style={s.muted}>Your backend code: <Text style={{ fontWeight: "800", color: INK }}>{code}</Text></Text>}
       {!!copyError && <Text style={s.copyErr}>{copyError}</Text>}
       <View style={s.btnRow}>
-        <TouchableOpacity style={s.copyBtn} onPress={copy}>
-          <Text style={s.copyT}>{copied ? "Copied!" : "Copy Link"}</Text>
+        <TouchableOpacity style={s.copyBtn} onPress={copy} accessibilityRole="button" accessibilityLabel={t("copyLink")}>
+          <Text style={s.copyT}>{copied ? t("copied") : t("copyLink")}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.copyBtn} onPress={share}>
-          <Text style={s.copyT}>Share</Text>
+        <TouchableOpacity style={s.copyBtn} onPress={share} accessibilityRole="button" accessibilityLabel={t("share")}>
+          <Text style={s.copyT}>{t("share")}</Text>
         </TouchableOpacity>
         <View style={s.referCta}>
-          <TouchableOpacity style={s.referBtn} onPress={onRefer}>
-            <Text style={{ color: "#fff", fontWeight: "700" }}>Refer Now</Text>
+          <TouchableOpacity style={s.referBtn} onPress={onRefer} accessibilityRole="button" accessibilityLabel={t("referNow")}>
+            <Text style={{ color: "#fff", fontWeight: "700" }}>{t("referNow")}</Text>
           </TouchableOpacity>
           <Text style={s.muted}>You earn ₹{perSignup} per real signup{signupCount != null ? ` • ${signupCount} so far (₹${creditEarned})` : ""}</Text>
         </View>
@@ -284,7 +292,7 @@ export function HearFromUsers({ onPress, t }) {
   );
 }
 
-function PlayerView({ url }) {
+function PlayerView({ url, t }) {
   const [playing, setPlaying] = useState(false);
   const [status, setStatus] = useState("loading");
   const [attempt, setAttempt] = useState(0);
@@ -300,12 +308,14 @@ function PlayerView({ url }) {
   if (status === "error") {
     return (
       <View style={s.centerBox}>
-        <Text style={s.copyErr}>Video failed to load. Check your connection and retry.</Text>
+        <Text style={s.copyErr}>{t("videoFail")}</Text>
         <TouchableOpacity
           style={s.retryBtn}
           onPress={() => { setStatus("loading"); setAttempt((a) => a + 1); }}
+          accessibilityRole="button"
+          accessibilityLabel={t("retry")}
         >
-          <Text style={s.retryT}>Retry</Text>
+          <Text style={s.retryT}>{t("retry")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -321,33 +331,33 @@ function PlayerView({ url }) {
         )}
       </View>
       <View style={s.videoBtns}>
-        <TouchableOpacity style={s.playToggle} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? "Pause video" : "Play video"}>
-          <Text style={s.playToggleT}>{playing ? "❚❚  Pause" : "▶  Play"}</Text>
+        <TouchableOpacity style={s.playToggle} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? t("pause") : t("play")}>
+          <Text style={s.playToggleT}>{playing ? `❚❚  ${t("pause")}` : `▶  ${t("play")}`}</Text>
         </TouchableOpacity>
       </View>
-      <Text style={s.muted}>Demo sample video — the real video URL comes from the backend.</Text>
+      <Text style={s.muted}>{t("demoVideoNote")}</Text>
     </View>
   );
 }
 
-export function VideoModal({ visible, title, url, onClose }) {
+export function VideoModal({ visible, title, url, t, onClose }) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={s.overlay}>
         <View style={s.sheet}>
           <View style={s.rowBetween}>
             <Text style={s.secT}>{title || "Video"}</Text>
-            <TouchableOpacity style={s.closeBtn} onPress={onClose}>
-              <Text style={s.closeT}>✕ Close</Text>
+            <TouchableOpacity style={s.closeBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("close")}>
+              <Text style={s.closeT}>✕ {t("close")}</Text>
             </TouchableOpacity>
           </View>
           {!url || !/^https?:\/\/.+/i.test(url) ? (
             <View style={s.unavail}>
-              <Text style={s.unavailT}>Video unavailable</Text>
-              <Text style={s.muted}>This competition does not currently provide a video. Please check back later.</Text>
+              <Text style={s.unavailT}>{t("videoUnavailable")}</Text>
+              <Text style={s.muted}>{t("videoUnavailableSub")}</Text>
             </View>
           ) : (
-            <PlayerView url={url} />
+            <PlayerView url={url} t={t} />
           )}
         </View>
       </View>
@@ -355,65 +365,69 @@ export function VideoModal({ visible, title, url, onClose }) {
   );
 }
 
-export function TestimonialsModal({ visible, items, loading, error, onRetry, onClose }) {
+export function TestimonialsModal({ visible, items, loading, error, t, onRetry, onClose }) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={s.overlay}>
         <View style={s.sheet}>
           <View style={s.rowBetween}>
-            <Text style={s.secT}>💬 Hear From Our Users</Text>
-            <TouchableOpacity style={s.closeBtn} onPress={onClose}>
-              <Text style={s.closeT}>✕ Close</Text>
+            <Text style={s.secT}>💬 {t("hearTitle")}</Text>
+            <TouchableOpacity style={s.closeBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("close")}>
+              <Text style={s.closeT}>✕ {t("close")}</Text>
             </TouchableOpacity>
           </View>
           {loading && (
-            <View style={s.centerBox}><ActivityIndicator size="large" color={TEAL} /><Text style={s.muted}>Loading reviews…</Text></View>
+            <View style={s.centerBox}><ActivityIndicator size="large" color={TEAL} /><Text style={s.muted}>{t("reviewsLoading")}</Text></View>
           )}
           {!loading && !!error && (
             <View style={s.centerBox}>
               <Text style={s.copyErr}>{error}</Text>
-              <TouchableOpacity style={s.retryBtn} onPress={onRetry}>
-                <Text style={s.retryT}>Retry</Text>
+              <TouchableOpacity style={s.retryBtn} onPress={onRetry} accessibilityRole="button" accessibilityLabel={t("retry")}>
+                <Text style={s.retryT}>{t("retry")}</Text>
               </TouchableOpacity>
             </View>
           )}
           {!loading && !error && (items || []).length === 0 && (
-            <Text style={s.muted}>No reviews yet — be the first to participate.</Text>
+            <Text style={s.muted}>{t("noReviews")}</Text>
           )}
-          {!loading && !error && (items || []).map((t, i) => (
-            <View key={i} style={s.quote}>
-              <Text style={s.stars}>{"★".repeat(t.rating || 5)}{"☆".repeat(5 - (t.rating || 5))}</Text>
-              <Text style={s.quoteT}>"{t.text}"</Text>
-              <Text style={s.muted}>— {t.name}{t.isDemo ? " · sample review" : ""}</Text>
-            </View>
-          ))}
+          {!loading && !error && (items || []).length > 0 && (
+            <ScrollView style={s.quoteList} showsVerticalScrollIndicator={false}>
+              {(items || []).map((t2, i) => (
+                <View key={i} style={s.quote}>
+                  <Text style={s.stars}>{"★".repeat(t2.rating || 5)}{"☆".repeat(5 - (t2.rating || 5))}</Text>
+                  <Text style={s.quoteT}>"{t2.text}"</Text>
+                  <Text style={s.muted}>— {t2.name}{t2.isDemo ? ` · ${t("sampleReview")}` : ""}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </View>
     </Modal>
   );
 }
 
-export function AdSlot() {
+export function AdSlot({ t }) {
   return (
     <View style={s.adSlot}>
-      <Text style={s.adSlotT}>Advertisement</Text>
-      <Text style={s.adSlotS}>Demo Ad Placement — reserved for sponsors</Text>
+      <Text style={s.adSlotT}>{t("adTitle")}</Text>
+      <Text style={s.adSlotS}>{t("adSub")}</Text>
     </View>
   );
 }
 
-const NAV_ITEMS = [
-  { key: "home", icon: "⌂", label: "Home" },
-  { key: "explore", icon: "🔍", label: "Explore" },
-  { key: "action", icon: "⊕", label: "Join" },
-  { key: "competitions", icon: "🏆", label: "Competitions" },
-  { key: "profile", icon: "👤", label: "Profile" },
+const NAV_DEFS = [
+  { key: "home", icon: "⌂", labelKey: "home" },
+  { key: "explore", icon: "🔍", labelKey: "explore" },
+  { key: "action", icon: "⊕", labelKey: "join" },
+  { key: "competitions", icon: "🏆", labelKey: "competitions" },
+  { key: "profile", icon: "👤", labelKey: "profile" },
 ];
 
-export function BottomNav({ active, onGo }) {
+export function BottomNav({ active, t, onGo }) {
   return (
     <View style={s.navBar}>
-      {NAV_ITEMS.map((n) => {
+      {NAV_DEFS.map((n) => {
         const on = active === n.key;
         return (
           <TouchableOpacity
@@ -422,10 +436,10 @@ export function BottomNav({ active, onGo }) {
             onPress={() => onGo(n.key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
-            accessibilityLabel={n.label}
+            accessibilityLabel={t(n.labelKey)}
           >
             <Text style={[s.navIcon, on && s.navOn]}>{n.icon}</Text>
-            <Text style={[s.navT, on && s.navOn]}>{n.label}</Text>
+            <Text style={[s.navT, on && s.navOn]}>{t(n.labelKey)}</Text>
           </TouchableOpacity>
         );
       })}
@@ -445,7 +459,7 @@ function stateBadge(state) {
   }
 }
 
-export function CompetitionCard({ item, onOpen }) {
+export function CompetitionCard({ item, t, onOpen }) {
   const [failed, setFailed] = useState(false);
   return (
     <TouchableOpacity
@@ -467,8 +481,8 @@ export function CompetitionCard({ item, onOpen }) {
         <Text style={s.muted}>{item.category} • {item.format}</Text>
         <View style={s.compStats}>
           <Text style={s.compPrize}>₹ {Number(item.prizePool).toLocaleString("en-IN")}</Text>
-          <Text style={s.muted}>₹{item.entryFee} entry</Text>
-          <Text style={s.spots}>{item.spotsLeft} left</Text>
+          <Text style={s.muted}>₹{item.entryFee} {t("entryFee").toLowerCase()}</Text>
+          <Text style={s.spots}>{t("spotsLeft", { n: item.spotsLeft })}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -553,6 +567,10 @@ const s = StyleSheet.create({
   quote: { borderBottomWidth: 1, borderColor: "#f0f4f4", paddingVertical: 10 },
   stars: { color: "#e8a100", fontWeight: "700", marginBottom: 2 },
   quoteT: { color: INK, marginBottom: 4 },
+  quoteList: { maxHeight: 320 },
+  demoMini: { color: MUTED, fontSize: 11, fontStyle: "italic" },
+  param: { marginBottom: 8 },
+  paramName: { color: INK, fontWeight: "700", fontSize: 13 },
   cover: { width: "100%", height: 168, borderRadius: 12, marginBottom: 12, backgroundColor: "#dfe9ea" },
   coverFallback: { backgroundColor: "#0e7482", alignItems: "center", justifyContent: "center" },
   coverFallbackT: { color: "#fff", fontWeight: "800", fontSize: 16 },

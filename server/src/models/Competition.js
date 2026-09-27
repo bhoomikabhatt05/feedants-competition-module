@@ -45,7 +45,13 @@ const CompetitionSchema = new mongoose.Schema(
     ],
     about: { type: String, default: "" },
     aboutMore: { type: String, default: "" },
-    judgingParameters: [{ type: String }],
+    judgingParameters: [
+      {
+        name: { type: String, required: true },
+        description: { type: String, default: "" },
+        weight: { type: Number, min: 0, max: 100 },
+      },
+    ],
     rules: [{ type: String }],
     rewards: [RewardSchema],
     referral: {

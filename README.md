@@ -57,13 +57,13 @@ server/src/
   routes/payments.js     DEMO/MOCK checkout (backend-owned)
   utils/lifecycle.js     state derivation + DTO
   seedData.js / seed.js  flagship competition + per-state demos + demo media/testimonials
-server/test/api.test.js  15 tests (lifecycle, concurrency, validation, referral, payments, testimonials, media)
+server/test/api.test.js  18 tests (lifecycle, concurrency, validation, referral, payments, testimonials, media, participation)
 mobile/
   App.js                 nav-stack shell (home/explore/competitions/details/profile) + details flows
   src/api.js             API client, demo device id, stale-labelled cache — NO business data
   src/hooks.js           countdown (server-based, expiry refresh), date formatting
-  src/i18n.js            minimal ENG/हिंदी UI-label dictionary (data stays backend-driven)
-  src/screens.js         Home / Explore / Competitions / Profile (all backend-driven)
+  src/i18n.js            centralized ENG/हिंदी UI-label dictionary (AsyncStorage-persisted)
+  src/screens.js         Home / Explore (search+categories+sections) / Competitions (participation) / Profile
   src/components/cards.js reusable section components (props-only, no hardcoded data)
 ```
 
@@ -111,9 +111,11 @@ EXPO_PUBLIC_API_URL=http://localhost:4000   # physical device: http://<lan-ip>:4
 cd server && npm run seed
 ```
 
-The server also **auto-seeds on boot**: `feedants-classical-dance` (registration_open, live countdown)
-plus `demo-state-{full,registration-closed,submission-open,submission-closed,result-declared}` so every
-lifecycle state is demonstrable via `GET /api/competitions/<slug>?userId=x`. The flagship mirrors the
+The server also **auto-seeds on boot** (idempotent, stable slugs): `feedants-classical-dance`
+(registration_open, live countdown) plus five distinct demo competitions — Urban Photography Challenge
+(open), Indie Music Showcase (submission_open), Digital Art Sprint (submission_closed), Creative Writing
+Challenge (registration_closed), Monsoon Dance Fest (result_declared) — so every lifecycle state is
+demonstrable and Explore/Competitions listings show distinct titles. The flagship mirrors the
 design: prize ₹1500, fee ₹99, capacity 20 (1 booked), judge Manju Dubey, rewards ₹550–80.
 Judge/winner video URLs and testimonials are seeded **demo/sample content** (public sample video files,
 `isDemo: true` reviews) — stand-ins until real media is provided.
@@ -170,6 +172,7 @@ Home/Explore/Competitions/Profile navigate → hardware back pops → language t
 | POST | `/api/competitions/:slug/cancel {userId}` | userId | 200 (seat released) | 401 · 404 no active registration |
 | POST | `/api/competitions/:slug/submit {userId, submissionUrl, fileType?, fileSizeBytes?}` | registered userId | 200 (URL recorded) | 400 `INVALID_URL/TYPE/SIZE` · 401 · 403 `NOT_REGISTERED` · 409 `WINDOW_CLOSED` |
 | GET | `/api/competitions/:slug/referral?userId=` | userId | 200 `{code, signupCount, creditEarned}` | 401 |
+| GET | `/api/competitions/mine?userId=` | userId | 200 my registrations with competition state | 401 |
 | GET | `/api/competitions/:slug/testimonials` | no | 200 demo/sample reviews (`isDemo: true`) | 404 unknown slug |
 | POST | `/api/payments/mock-checkout` | — | 200 DEMO intent `{demo:true}` | 400 · 501 if real keys present but unwired |
 
@@ -238,10 +241,11 @@ Abuse note: one credit per referred registration; rate limits apply.
 ## Testing
 
 ```bash
-cd server && npm test        # 15 tests: health, detail, 404, 401, 6 lifecycle states,
+cd server && npm test        # 18 tests: health, detail, 404, 401, 6 lifecycle states,
                              # duplicate-409, oversell (3×10), same-user (1×10), closed/full codes,
                              # submission 403/400/200, referral credit rule, mock-payment flag,
-                             # testimonials list/404/validation, competition media fields
+                             # testimonials list/404/validation, competition media fields,
+                             # participation (/mine + auth), seed distinctness + judging weights
 cd mobile && npx expo-doctor                       # 21/21
 cd mobile && npx expo export --platform web        # Metro web bundle must build cleanly
 cd mobile && npx expo export --platform android    # Android bundle must build cleanly

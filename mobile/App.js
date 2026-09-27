@@ -1,30 +1,39 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform, Share, BackHandler } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { api, getUserId, readCache, SLUG } from "./src/api";
-import { makeT } from "./src/i18n";
-import { HomeScreen, ListScreen, ProfileScreen } from "./src/screens";
+import { makeT, loadLang, saveLang } from "./src/i18n";
+import { HomeScreen, ExploreScreen, CompetitionsScreen, ProfileScreen } from "./src/screens";
 import { TopBar, CoverPhoto, TitleCard, JudgeCard, CountdownBar, DatesGrid, WinnersRow, InfoTabs, Rewards, PrizeMoneyCard, ReferCard, HearFromUsers, VideoModal, TestimonialsModal, BottomNav, AdSlot, TEAL, INK, MUTED } from "./src/components/cards";
 import { formatDateTime } from "./src/hooks";
 
-function stateMessage(state) {
-  switch (state) {
-    case "full": return "All spots are booked. Join the waitlist for the next edition.";
-    case "registration_closed": return "Registration has closed.";
-    case "submission_open": return "Submissions are open — upload your performance.";
-    case "submission_closed": return "Submissions closed. Results soon.";
-    case "result_declared": return "Results declared. Check winners!";
-    case "cancelled": return "This competition was cancelled. Refunds apply.";
-    default: return "";
-  }
-}
-
 export default function App() {
-  const [lang, setLang] = useState("ENG");
+  const [lang, setLangState] = useState("ENG");
   const t = makeT(lang);
+  const setLang = (l) => {
+    setLangState(l);
+    saveLang(AsyncStorage, l);
+  };
+  useEffect(() => {
+    loadLang(AsyncStorage).then(setLangState);
+  }, []);
+
   const [stack, setStack] = useState([{ name: "home" }]);
   const current = stack[stack.length - 1];
   const detailSlug = current.name === "details" ? current.slug : null;
+
+  const stateMessage = (state) => {
+    switch (state) {
+      case "full": return t("fullMsg");
+      case "registration_closed": return t("closedMsg");
+      case "submission_open": return t("subOpenMsg");
+      case "submission_closed": return t("subClosedMsg");
+      case "result_declared": return t("resultsMsg");
+      case "cancelled": return t("cancelledMsg");
+      default: return "";
+    }
+  };
 
   // Details-screen state (for whichever competition is open)
   const [comp, setComp] = useState(null);
@@ -131,7 +140,7 @@ export default function App() {
         if (ref) setReferral(ref);
       }
     } catch (e) {
-      Alert.alert("Share failed", "Could not open the share sheet. Please try again.");
+      Alert.alert(t("shareFailTitle"), t("shareFailMsg"));
     }
   };
 
@@ -143,7 +152,7 @@ export default function App() {
       const items = await api.testimonials(slug);
       setReviews({ visible: true, items, loading: false, error: "" });
     } catch (e) {
-      setReviews({ visible: true, items: [], loading: false, error: e.message + " — you can retry." });
+      setReviews({ visible: true, items: [], loading: false, error: e.message + t("subRetry") });
     }
   };
 
@@ -155,17 +164,17 @@ export default function App() {
       try {
         await api.mockCheckout(userId, (comp && comp.entryFee) || 0);
       } catch (pe) {
-        Alert.alert("Payment failed (DEMO)", pe.message + "\nNo money moved. Retry when ready.");
+        Alert.alert(t("payFailTitle"), pe.message + "\n" + t("payFailMsg"));
         return;
       }
       const data = await api.register(slug, userId);
       setTarget(data);
       if (slug === SLUG) setFeatured(data);
-      Alert.alert("Registered (DEMO payment)", "Your spot is booked. Mock payment — no real money moved.");
+      Alert.alert(t("regDoneTitle"), t("regDoneMsg"));
     } catch (e) {
-      if (e.code === "FULL") Alert.alert("Competition full", "All spots are booked.");
-      else if (e.code === "DUPLICATE") Alert.alert("Already registered", "You already hold a spot.");
-      else Alert.alert("Cannot register", e.message);
+      if (e.code === "FULL") Alert.alert(t("fullTitle"), t("fullMsg"));
+      else if (e.code === "DUPLICATE") Alert.alert(t("dupTitle"), t("dupMsg"));
+      else Alert.alert(t("cantRegister"), e.message);
       load(slug);
     } finally {
       setBusy(false);
@@ -176,7 +185,7 @@ export default function App() {
 
   const centerAction = () => {
     if (!featured) {
-      Alert.alert("Loading", "Competition data is still loading. Try again in a moment.");
+      Alert.alert(t("loadingTitle"), t("loadingMsg"));
       return;
     }
     if (!featured.isRegistered && featured.canRegister) {
@@ -192,9 +201,9 @@ export default function App() {
     }
     openCompetition(featured.slug);
     const reason = featured.registration?.submittedAt
-      ? "You have already submitted. You can update your submission from the details screen."
-      : stateMessage(featured.state) || "Participation is not available right now.";
-    Alert.alert("Join", reason);
+      ? t("submittedTick")
+      : stateMessage(featured.state) || t("regClosed");
+    Alert.alert(t("joinTitle"), reason);
   };
 
   const onGo = (key) => {
@@ -209,11 +218,11 @@ export default function App() {
     setSubError("");
     const url = subUrl.trim();
     if (!url) {
-      setSubError("Paste your performance video URL first (mp4/mov/webm).");
+      setSubError(t("subNeedUrl"));
       return;
     }
     if (!/^https?:\/\/.+/i.test(url)) {
-      setSubError("Enter a valid http(s) video URL (mp4/mov/webm).");
+      setSubError(t("subInvalid"));
       return;
     }
     try {
@@ -222,9 +231,9 @@ export default function App() {
       const data = await api.submit(comp.slug, userId, url, "video/mp4", 50 * 1024 * 1024);
       setComp(data);
       setSubUrl("");
-      Alert.alert("Submitted", "Your performance was recorded for judging.");
+      Alert.alert(t("submittedTitle"), t("submittedMsg"));
     } catch (e) {
-      setSubError(e.message + " — you can retry.");
+      setSubError(e.message + t("subRetry"));
     } finally {
       setBusy(false);
     }
@@ -233,24 +242,24 @@ export default function App() {
   const submitted = !!(comp && comp.registration && comp.registration.submittedAt);
   let cta;
   if (!comp) {
-    cta = { label: "Loading…", sub: "", onPress: null, disabled: true };
+    cta = { label: t("loading"), sub: "", onPress: null, disabled: true };
   } else if (!comp.isRegistered) {
     if (comp.state === "registration_open") {
-      cta = { label: `Register Now • ₹${comp.entryFee} (DEMO)`, sub: "", onPress: onRegister, disabled: false };
+      cta = { label: `${t("registerNow")} • ₹${comp.entryFee} (DEMO)`, sub: "", onPress: onRegister, disabled: false };
     } else if (comp.state === "full") {
-      cta = { label: "Competition Full", sub: stateMessage(comp.state), onPress: null, disabled: true };
+      cta = { label: t("compFull"), sub: stateMessage(comp.state), onPress: null, disabled: true };
     } else if (comp.state === "result_declared") {
-      cta = { label: "Results Available", sub: stateMessage(comp.state), onPress: null, disabled: true };
+      cta = { label: t("resultsAvailable"), sub: stateMessage(comp.state), onPress: null, disabled: true };
     } else {
-      cta = { label: "Registration Closed", sub: stateMessage(comp.state), onPress: null, disabled: true };
+      cta = { label: t("regClosed"), sub: stateMessage(comp.state), onPress: null, disabled: true };
     }
   } else if (submitted) {
-    cta = { label: "Submitted ✓", sub: `Submitted ${new Date(comp.registration.submittedAt).toLocaleString()}`, onPress: null, disabled: true };
+    cta = { label: t("submittedTick"), sub: `${t("submittedTick")} ${new Date(comp.registration.submittedAt).toLocaleString()}`, onPress: null, disabled: true };
   } else if (comp.canUploadSubmission) {
-    cta = { label: "Upload Submission", sub: "Tap to fill the form below", onPress: () => subInputRef.current && subInputRef.current.focus(), disabled: false };
+    cta = { label: t("uploadSubmission"), sub: t("tapToFill"), onPress: () => subInputRef.current && subInputRef.current.focus(), disabled: false };
   } else {
     const opens = formatDateTime(comp.dates.submissionStarts);
-    cta = { label: "Registered ✓", sub: `Submission opens ${opens.date} at ${opens.time}`, onPress: null, disabled: true };
+    cta = { label: t("registered"), sub: t("subOpensOn", { d: opens.date, h: opens.time }), onPress: null, disabled: true };
   }
   const ctaDisabled = cta.disabled || busy || !cta.onPress;
 
@@ -260,27 +269,29 @@ export default function App() {
     <KeyboardAvoidingView style={st.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar style="auto" />
       {current.name === "home" && (
-        <HomeScreen onOpenCompetition={openCompetition} onGo={onGo} />
+        <HomeScreen t={t} onOpenCompetition={openCompetition} onGo={onGo} />
       )}
       {current.name === "explore" && (
-        <ListScreen title="Explore" searchable onOpenCompetition={openCompetition} />
+        <ExploreScreen t={t} onOpenCompetition={openCompetition} />
       )}
       {current.name === "competitions" && (
-        <ListScreen title="Competitions" searchable={false} onOpenCompetition={openCompetition} />
+        <CompetitionsScreen t={t} onOpenCompetition={openCompetition} onExplore={() => push({ name: "explore" })} />
       )}
-      {current.name === "profile" && <ProfileScreen />}
+      {current.name === "profile" && (
+        <ProfileScreen t={t} lang={lang} setLang={setLang} onOpenCompetition={openCompetition} />
+      )}
       {current.name === "details" && phase === "loading" && (
         <View style={st.center}><ActivityIndicator size="large" color={TEAL} /><Text style={st.muted}>{t("loading")}</Text></View>
       )}
       {current.name === "details" && phase === "error" && (
         <View style={st.center}>
-          <Text style={st.errT}>{errorCode === 404 || /not found/i.test(error) ? "Competition not found" : "Couldn't load competition"}</Text>
+          <Text style={st.errT}>{errorCode === 404 || /not found/i.test(error) ? t("errNotFound") : t("errLoad")}</Text>
           <Text style={st.muted}>{error}</Text>
           <TouchableOpacity style={st.retry} onPress={() => { setPhase("loading"); load(detailSlug); }}>
-            <Text style={st.retryT}>Retry</Text>
+            <Text style={st.retryT}>{t("retry")}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={st.retryGhost} onPress={navBack}>
-            <Text style={st.retryGhostT}>← Back to Competitions</Text>
+            <Text style={st.retryGhostT}>{t("backToComp")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -292,14 +303,14 @@ export default function App() {
           <TopBar lang={lang} setLang={setLang} t={t} onBack={navBack} />
           {stale && (
             <View style={st.offline}>
-              <Text style={st.offlineT}>Offline — showing last synced data{error ? `: ${error}` : ""}. Pull to retry.</Text>
+              <Text style={st.offlineT}>{t("offline")}{error ? ` (${error})` : ""}</Text>
             </View>
           )}
           <CoverPhoto uri={comp.coverImage} title={comp.title} />
-          <TitleCard c={comp} />
-          <JudgeCard c={comp} onPlay={() => openVideo("Judge Intro", comp.judge.introVideoUrl)} />
+          <TitleCard c={comp} t={t} />
+          <JudgeCard c={comp} t={t} onPlay={() => openVideo("Judge Intro", comp.judge.introVideoUrl)} />
           {comp.state === "registration_open" && (
-            <CountdownBar ms={comp.countdown.registrationClosesInMs} onExpiry={() => load(comp.slug)} />
+            <CountdownBar ms={comp.countdown.registrationClosesInMs} t={t} onExpiry={() => load(comp.slug)} />
           )}
           {!!stateMessage(comp.state) && comp.state !== "registration_open" && (
             <View style={st.notice}><Text style={st.noticeT}>{stateMessage(comp.state)}</Text></View>
@@ -308,27 +319,27 @@ export default function App() {
           <WinnersRow c={comp} t={t} onPlay={(w) => openVideo(w.name, w.videoUrl)} />
           <InfoTabs c={comp} t={t} />
           <Rewards c={comp} t={t} />
-          <View style={st.disclaimer}><Text style={st.muted}>ⓘ  <Text style={{ fontWeight: "700" }}>Disclaimer:</Text> Only contributions from paid participants will be considered for judging.</Text></View>
-          <PrizeMoneyCard onPrizeVideo={() => openVideo("Prize Money Guide", comp.prizeVideoUrl)} />
+          <View style={st.disclaimer}><Text style={st.muted}>ⓘ  <Text style={{ fontWeight: "700" }}>Disclaimer:</Text> {t("disclaimer")}</Text></View>
+          <PrizeMoneyCard t={t} onPrizeVideo={() => openVideo(t("prizeTitle"), comp.prizeVideoUrl)} />
           {comp.isRegistered && (
             <View style={st.card}>
-              <Text style={st.secT}>Your Submission {comp.canUploadSubmission ? "" : "(opens with submission window)"}</Text>
+              <Text style={st.secT}>{t("yourSubmission")} {comp.canUploadSubmission ? "" : t("subOpensWith")}</Text>
               {submitted && (
-                <Text style={st.submitted}>✓ Submitted{comp.registration.submissionUrl ? `: ${comp.registration.submissionUrl}` : ""}</Text>
+                <Text style={st.submitted}>✓ {t("subDone")}{comp.registration.submissionUrl ? `: ${comp.registration.submissionUrl}` : ""}</Text>
               )}
               <TextInput
                 ref={subInputRef}
                 style={st.input}
-                placeholder="https://…/performance.mp4"
+                placeholder={t("subPlaceholder")}
                 value={subUrl}
                 onChangeText={setSubUrl}
                 autoCapitalize="none"
               />
               {!!subError && <Text style={st.subErr}>{subError}</Text>}
               <TouchableOpacity style={[st.upBtn, (!comp.canUploadSubmission || busy) && st.upBtnOff]} disabled={!comp.canUploadSubmission || busy} onPress={onUpload}>
-                <Text style={st.upBtnT}>{busy ? "Uploading…" : submitted ? "Update Submission (demo URL)" : "Upload (demo URL recorded by backend)"}</Text>
+                <Text style={st.upBtnT}>{busy ? t("subUploading") : submitted ? t("subUpdate") : t("subUpload")}</Text>
               </TouchableOpacity>
-              {!comp.canUploadSubmission && <Text style={st.muted}>Upload enables automatically when the backend submission window opens.</Text>}
+              {!comp.canUploadSubmission && <Text style={st.muted}>{t("subAutoNote")}</Text>}
             </View>
           )}
           <ReferCard
@@ -342,8 +353,8 @@ export default function App() {
             t={t}
           />
           <HearFromUsers onPress={openReviews} t={t} />
-          <AdSlot />
-          <View style={{ height: current.name === "details" ? 190 : 110 }} />
+          <AdSlot t={t} />
+          <View style={{ height: 190 }} />
         </ScrollView>
       )}
 
@@ -351,6 +362,7 @@ export default function App() {
         visible={!!video}
         title={video ? video.title : ""}
         url={video ? video.url : ""}
+        t={t}
         onClose={() => setVideo(null)}
       />
       <TestimonialsModal
@@ -358,6 +370,7 @@ export default function App() {
         items={reviews.items}
         loading={reviews.loading}
         error={reviews.error}
+        t={t}
         onRetry={openReviews}
         onClose={() => setReviews((r) => ({ ...r, visible: false }))}
       />
@@ -365,11 +378,11 @@ export default function App() {
       <View style={st.footer}>
         {current.name === "details" && phase === "content" && comp && (
           <TouchableOpacity style={[st.cta, ctaDisabled && st.ctaOff]} disabled={ctaDisabled} onPress={cta.onPress || undefined} accessibilityRole="button" accessibilityLabel={cta.label}>
-            <Text style={st.ctaT}>{busy ? "Please wait…" : cta.label}</Text>
+            <Text style={st.ctaT}>{busy ? t("pleaseWait") : cta.label}</Text>
             {!!cta.sub && <Text style={st.ctaS}>{cta.sub}</Text>}
           </TouchableOpacity>
         )}
-        <BottomNav active={navActive} onGo={onGo} />
+        <BottomNav active={navActive} t={t} onGo={onGo} />
       </View>
     </KeyboardAvoidingView>
   );

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Share } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { api, getUserId, SLUG } from "./api";
 import { CompetitionCard, TEAL, INK, MUTED } from "./components/cards";
 import { formatDateTime } from "./hooks";
@@ -32,7 +33,7 @@ function ScreenState({ loading, error, empty, onRetry, loadingText, children }) 
   return children;
 }
 
-export function HomeScreen({ onOpenCompetition, onGo }) {
+export function HomeScreen({ t, onOpenCompetition, onGo }) {
   const [comp, setComp] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,19 +56,19 @@ export function HomeScreen({ onOpenCompetition, onGo }) {
   return (
     <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <Text style={st.hero}>Feedants</Text>
-      <Text style={st.sub}>Classical dance competitions, judged by experts.</Text>
-      <ScreenState loading={loading} error={error} onRetry={load} loadingText="Loading featured competition…">
+      <Text style={st.sub}>{t("tagline")}</Text>
+      <ScreenState loading={loading} error={error} onRetry={load} loadingText={t("loading")}>
         {comp && (
-          <CompetitionCard item={comp} onOpen={() => onOpenCompetition(comp.slug)} />
+          <CompetitionCard item={comp} t={t} onOpen={() => onOpenCompetition(comp.slug)} />
         )}
       </ScreenState>
       {comp && (
         <View style={st.quickRow}>
-          <TouchableOpacity style={st.quick} onPress={() => onOpenCompetition(comp.slug)}>
-            <Text style={st.quickT}>View details →</Text>
+          <TouchableOpacity style={st.quick} onPress={() => onOpenCompetition(comp.slug)} accessibilityRole="button" accessibilityLabel={t("viewDetails")}>
+            <Text style={st.quickT}>{t("viewDetails")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={st.quick} onPress={() => onGo("competitions")}>
-            <Text style={st.quickT}>All competitions →</Text>
+          <TouchableOpacity style={st.quick} onPress={() => onGo("competitions")} accessibilityRole="button" accessibilityLabel={t("allCompetitions")}>
+            <Text style={st.quickT}>{t("allCompetitions")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -76,11 +77,14 @@ export function HomeScreen({ onOpenCompetition, onGo }) {
   );
 }
 
-export function ListScreen({ title, searchable, onOpenCompetition }) {
+const ALL_CATS = ["Dance", "Music", "Art", "Photography", "Writing"];
+
+export function ExploreScreen({ t, onOpenCompetition }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [cat, setCat] = useState("");
 
   const load = async () => {
     try {
@@ -97,29 +101,64 @@ export function ListScreen({ title, searchable, onOpenCompetition }) {
   useEffect(() => { load(); }, []);
 
   const q = query.trim().toLowerCase();
-  const shown = q ? items.filter((c) => c.title.toLowerCase().includes(q)) : items;
+  const matchQ = (c) => !q || c.title.toLowerCase().includes(q);
+  const matchC = (c) => !cat || c.category === cat;
+  const open = items.filter((c) => c.state === "registration_open");
+  const closingSoon = [...open]
+    .sort((a, b) => new Date(a.dates.registerBefore) - new Date(b.dates.registerBefore))
+    .slice(0, 3);
+  const recent = [...items]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 3);
+  const browse = items.filter((c) => matchQ(c) && matchC(c));
+  const cats = [ ...new Set([...ALL_CATS, ...items.map((c) => c.category)]) ];
 
   return (
     <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
-      <Text style={st.hero}>{title}</Text>
-      {searchable && (
-        <TextInput
-          style={st.search}
-          placeholder="Search competitions…"
-          value={query}
-          onChangeText={setQuery}
-          autoCapitalize="none"
-        />
-      )}
+      <Text style={st.hero}>{t("explore")}</Text>
+      <TextInput
+        style={st.search}
+        placeholder={t("searchPh")}
+        value={query}
+        onChangeText={setQuery}
+        autoCapitalize="none"
+      />
       <ScreenState
         loading={loading}
         error={error}
         onRetry={load}
-        loadingText="Loading competitions…"
-        empty={q ? "No competitions match your search." : items.length === 0 ? "No competitions published yet." : ""}
+        loadingText={t("loading")}
+        empty={items.length === 0 ? t("nonePublished") : ""}
       >
-        {shown.map((c) => (
-          <CompetitionCard key={c.slug} item={c} onOpen={() => onOpenCompetition(c.slug)} />
+        <Text style={st.secT}>{t("featured")}</Text>
+        {open.slice(0, 1).map((c) => (
+          <CompetitionCard key={c.slug} item={c} t={t} onOpen={() => onOpenCompetition(c.slug)} />
+        ))}
+        <Text style={st.secT}>{t("closingSoon")}</Text>
+        {closingSoon.map((c) => (
+          <CompetitionCard key={c.slug} item={c} t={t} onOpen={() => onOpenCompetition(c.slug)} />
+        ))}
+        <Text style={st.secT}>{t("recentlyAdded")}</Text>
+        {recent.map((c) => (
+          <CompetitionCard key={c.slug} item={c} t={t} onOpen={() => onOpenCompetition(c.slug)} />
+        ))}
+        <Text style={st.secT}>{t("browseByCat")}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.chips}>
+          {[{ k: "", l: t("fAll") }, ...cats.map((c) => ({ k: c, l: c }))].map((chip) => (
+            <TouchableOpacity
+              key={chip.k || "all"}
+              style={[st.chip, cat === chip.k && st.chipOn]}
+              onPress={() => setCat(chip.k)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: cat === chip.k }}
+            >
+              <Text style={[st.chipT, cat === chip.k && st.chipTOn]}>{chip.l}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {browse.length === 0 && <Text style={st.muted}>{t("noMatch")}</Text>}
+        {browse.map((c) => (
+          <CompetitionCard key={`b-${c.slug}`} item={c} t={t} onOpen={() => onOpenCompetition(c.slug)} />
         ))}
       </ScreenState>
       <View style={{ height: 100 }} />
@@ -127,12 +166,102 @@ export function ListScreen({ title, searchable, onOpenCompetition }) {
   );
 }
 
-export function ProfileScreen() {
+const PART_FILTERS = ["all", "registered", "submitting", "submitted", "completed"];
+
+function partOf(m) {
+  // m: { competition, status, submissionUrl, submittedAt }
+  if (m.status !== "registered") return "completed";
+  if (m.submittedAt) return "submitted";
+  const st8 = m.competition && m.competition.state;
+  if (st8 === "submission_open") return "submitting";
+  if (st8 === "result_declared" || st8 === "submission_closed" || st8 === "cancelled") return "completed";
+  return "registered";
+}
+
+export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
+  const [mine, setMine] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  const load = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      setMine(await api.mine(await getUserId()));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const shown = mine.filter((m) => filter === "all" || partOf(m) === filter);
+
+  return (
+    <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
+      <Text style={st.hero}>{t("competitions")}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.chips}>
+        {PART_FILTERS.map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[st.chip, filter === f && st.chipOn]}
+            onPress={() => setFilter(f)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filter === f }}
+          >
+            <Text style={[st.chipT, filter === f && st.chipTOn]}>{t("f" + f[0].toUpperCase() + f.slice(1))}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      <ScreenState
+        loading={loading}
+        error={error}
+        onRetry={load}
+        loadingText={t("loading")}
+        empty={mine.length === 0 ? t("emptyJoin") : shown.length === 0 ? t("noMatch") : ""}
+      >
+        {mine.length === 0 ? (
+          <TouchableOpacity style={st.retry} onPress={onExplore} accessibilityRole="button" accessibilityLabel={t("exploreBtn")}>
+            <Text style={st.retryT}>{t("exploreBtn")}</Text>
+          </TouchableOpacity>
+        ) : (
+          shown.map((m) => {
+            const c = m.competition;
+            const action = m.submittedAt ? t("viewSubmission") : c.canUploadSubmission ? t("continueSubmission") : t("viewCompetition");
+            return (
+              <View key={String(c.id || c.slug)} style={st.partCard}>
+                <TouchableOpacity onPress={() => onOpenCompetition(c.slug)} accessibilityRole="button" accessibilityLabel={c.title}>
+                  <Text style={st.partTitle}>{c.title}</Text>
+                  <Text style={st.muted}>{c.category} • {c.state}</Text>
+                  <Text style={st.muted}>
+                    {t("registerBefore")}: {formatDateTime(c.dates.registerBefore).date}
+                    {m.submittedAt ? ` • ${t("submittedTick")} ${new Date(m.submittedAt).toLocaleDateString()}` : ""}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={st.partBtn} onPress={() => onOpenCompetition(c.slug)}>
+                  <Text style={st.partBtnT}>{action}</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })
+        )}
+      </ScreenState>
+      <View style={{ height: 100 }} />
+    </ScrollView>
+  );
+}
+
+export function ProfileScreen({ t, lang, setLang, onOpenCompetition, onExplore }) {
   const [userId, setUserId] = useState("");
-  const [comp, setComp] = useState(null);
+  const [mine, setMine] = useState([]);
   const [referral, setReferral] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [info, setInfo] = useState(null); // { title, text } | null
 
   const load = async () => {
     try {
@@ -140,7 +269,7 @@ export function ProfileScreen() {
       setLoading(true);
       const id = await getUserId();
       setUserId(id);
-      setComp(await api.detail(SLUG, id));
+      setMine(await api.mine(id));
       setReferral(await api.referral(SLUG, id).catch(() => null));
     } catch (e) {
       setError(e.message);
@@ -151,50 +280,122 @@ export function ProfileScreen() {
 
   useEffect(() => { load(); }, []);
 
+  const registered = mine.filter((m) => m.status === "registered");
+  const submissions = mine.filter((m) => m.submittedAt);
+  const inProgress = mine.filter((m) => m.status === "registered" && !m.submittedAt);
+  const results = mine.filter((m) => m.competition && m.competition.state === "result_declared");
+
+  const copyCode = async () => {
+    if (!referral) return;
+    try {
+      await Clipboard.setStringAsync(referral.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
+  const shareCode = async () => {
+    if (!referral) return;
+    try {
+      await Share.share({ message: `Join me on Feedants with code ${referral.code}! https://feedants.com/r/${referral.code}` });
+    } catch {}
+  };
+
   return (
     <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
-      <Text style={st.hero}>Profile</Text>
-      <Text style={st.sub}>Demo device account — no real user data is stored.</Text>
-      <ScreenState loading={loading} error={error} onRetry={load} loadingText="Loading profile…">
-        <View style={st.card}>
-          <Text style={st.lbl}>Demo user ID</Text>
-          <Text style={st.val}>{userId}</Text>
+      <Text style={st.hero}>{t("profile")}</Text>
+      <View style={st.whoRow}>
+        <View style={st.bigAvatar}><Text style={{ fontSize: 30, color: TEAL, fontWeight: "800" }}>{(userId || "U").slice(0, 1).toUpperCase()}</Text></View>
+        <View>
+          <Text style={st.whoName}>{t("demoParticipant")}</Text>
+          <Text style={st.muted}>{t("demoAccount")}</Text>
         </View>
+      </View>
+      <ScreenState loading={loading} error={error} onRetry={load} loadingText={t("loading")}>
         <View style={st.card}>
-          <Text style={s2.secT}>My participation</Text>
-          <Text style={st.muted}>
-            {comp && comp.isRegistered
-              ? `Registered for ${comp.title}.`
-              : "Not registered for the featured competition yet."}
-          </Text>
-          {comp && comp.registration && comp.registration.submittedAt && (
-            <Text style={st.muted}>Submitted on {new Date(comp.registration.submittedAt).toLocaleString()}.</Text>
-          )}
-          {comp && (
-            <Text style={st.muted}>
-              Registration closes {formatDateTime(comp.dates.registerBefore).date} at {formatDateTime(comp.dates.registerBefore).time}.
-            </Text>
-          )}
+          <Text style={st.lbl}>{t("demoUserId")}</Text>
+          <Text style={st.val} numberOfLines={1}>{userId}</Text>
         </View>
+        <View style={st.sumRow}>
+          {[[t("statRegistered"), registered.length], [t("statSubmissions"), submissions.length], [t("statInProgress"), inProgress.length], [t("statResults"), results.length]].map(([l, n]) => (
+            <View key={l} style={st.sum}>
+              <Text style={st.sumN}>{n}</Text>
+              <Text style={st.sumL}>{l}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={st.secT}>{t("myCompetitions")}</Text>
+        {registered.length === 0 && <Text style={st.muted}>{t("emptyJoin")}</Text>}
+        {registered.map((m) => (
+          <TouchableOpacity key={String(m.competition.id)} style={st.partCard} onPress={() => onOpenCompetition(m.competition.slug)}>
+            <Text style={st.partTitle}>{m.competition.title}</Text>
+            <Text style={st.muted}>{m.competition.state} • {t("registerBefore")}: {formatDateTime(m.competition.dates.registerBefore).date}</Text>
+            <Text style={st.partBtnT}>{m.submittedAt ? t("viewSubmission") : m.competition.canUploadSubmission ? t("continueSubmission") : t("viewCompetition")} →</Text>
+          </TouchableOpacity>
+        ))}
+        <Text style={st.secT}>{t("mySubmissions")}</Text>
+        {submissions.length === 0 && <Text style={st.muted}>—</Text>}
+        {submissions.map((m) => (
+          <View key={String(m.competition.id)} style={st.partCard}>
+            <Text style={st.partTitle}>{m.competition.title}</Text>
+            <Text style={st.muted} numberOfLines={1}>{m.submissionUrl}</Text>
+            <Text style={st.muted}>{new Date(m.submittedAt).toLocaleString()}</Text>
+          </View>
+        ))}
         {referral && (
           <View style={st.card}>
-            <Text style={s2.secT}>My referral</Text>
+            <Text style={st.secT}>{t("myReferral")}</Text>
             <Text style={st.val}>{referral.code}</Text>
-            <Text style={st.muted}>{referral.signupCount} signups • ₹{referral.creditEarned} earned (₹{referral.perSignupReward} per real signup).</Text>
+            <Text style={st.muted}>{referral.signupCount} {t("referrals")} • ₹{referral.creditEarned}</Text>
+            <View style={st.btnRow}>
+              <TouchableOpacity style={st.smallBtn} onPress={copyCode} accessibilityRole="button" accessibilityLabel={t("copyCode")}>
+                <Text style={st.smallBtnT}>{copied ? t("copied") : t("copyCode")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={st.smallBtn} onPress={shareCode} accessibilityRole="button" accessibilityLabel={t("share")}>
+                <Text style={st.smallBtnT}>{t("share")}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
+        <Text style={st.secT}>{t("settings")}</Text>
+        <View style={st.card}>
+          <View style={st.setRow}>
+            <Text style={st.setLbl}>{t("language")}</Text>
+            <View style={st.langWrap}>
+              {["ENG", "हिंदी"].map((l) => (
+                <TouchableOpacity key={l} onPress={() => setLang(l)} style={[st.lang, lang === l && st.langOn]} accessibilityRole="button" accessibilityLabel={l}>
+                  <Text style={[st.langT, lang === l && st.langTOn]}>{l}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <TouchableOpacity style={st.setRow} onPress={() => setInfo({ title: t("aboutApp"), text: t("aboutText") })}>
+            <Text style={st.setLbl}>{t("aboutApp")}</Text><Text>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={st.setRow} onPress={() => setInfo({ title: t("help"), text: t("helpText") })}>
+            <Text style={st.setLbl}>{t("help")}</Text><Text>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={st.setRow} onPress={() => setInfo({ title: t("demoUserId"), text: t("demoAccount") })}>
+            <Text style={st.setLbl}>{t("demoUserId")}</Text><Text>›</Text>
+          </TouchableOpacity>
+          {!!info && (
+            <View style={st.infoBox}>
+              <Text style={st.partTitle}>{info.title}</Text>
+              <Text style={st.muted}>{info.text}</Text>
+              <TouchableOpacity onPress={() => setInfo(null)}><Text style={st.closeInfo}>{t("close")} ✕</Text></TouchableOpacity>
+            </View>
+          )}
+        </View>
       </ScreenState>
       <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
-const s2 = { secT: { fontWeight: "800", color: INK, marginBottom: 8 } };
-
 const st = StyleSheet.create({
   body: { padding: 14, paddingTop: 48, flexGrow: 1 },
   hero: { fontSize: 24, fontWeight: "800", color: INK },
   sub: { color: MUTED, fontSize: 13, marginBottom: 12 },
+  secT: { fontWeight: "800", color: INK, marginVertical: 8 },
   center: { alignItems: "center", padding: 32, gap: 10 },
   muted: { color: MUTED, fontSize: 13 },
   errT: { fontSize: 17, fontWeight: "800", color: INK },
@@ -203,8 +404,36 @@ const st = StyleSheet.create({
   quickRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   quick: { flex: 1, backgroundColor: "#fff", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#e6efef" },
   quickT: { color: TEAL, fontWeight: "700" },
-  search: { backgroundColor: "#fff", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#e6efef", marginBottom: 12 },
+  search: { backgroundColor: "#fff", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#e6efef", marginBottom: 4 },
+  chips: { gap: 8, paddingVertical: 8 },
+  chip: { backgroundColor: "#eef3f4", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, marginRight: 8 },
+  chipOn: { backgroundColor: TEAL },
+  chipT: { color: INK, fontWeight: "600" },
+  chipTOn: { color: "#fff" },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e6efef" },
   lbl: { color: MUTED, fontSize: 12 },
   val: { color: INK, fontWeight: "800", fontSize: 15 },
+  partCard: { backgroundColor: "#fff", borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: "#e6efef" },
+  partTitle: { fontWeight: "800", color: INK, fontSize: 15 },
+  partBtn: { marginTop: 8, alignSelf: "flex-start", backgroundColor: "#e8f4f5", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  partBtnT: { color: TEAL, fontWeight: "700" },
+  whoRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  bigAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#e8f4f5", alignItems: "center", justifyContent: "center" },
+  whoName: { fontSize: 18, fontWeight: "800", color: INK },
+  sumRow: { flexDirection: "row", gap: 8, marginBottom: 4 },
+  sum: { flex: 1, backgroundColor: "#fff", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#e6efef", alignItems: "center" },
+  sumN: { fontSize: 20, fontWeight: "800", color: TEAL },
+  sumL: { fontSize: 11, color: MUTED, textAlign: "center" },
+  btnRow: { flexDirection: "row", gap: 8, marginTop: 8 },
+  smallBtn: { borderWidth: 1, borderColor: TEAL, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  smallBtnT: { color: TEAL, fontWeight: "700" },
+  setRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: "#f0f4f4" },
+  setLbl: { color: INK, fontWeight: "600" },
+  langWrap: { flexDirection: "row", backgroundColor: "#eef3f4", borderRadius: 16, padding: 2 },
+  lang: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14 },
+  langOn: { backgroundColor: TEAL },
+  langT: { color: INK, fontWeight: "700" },
+  langTOn: { color: "#fff" },
+  infoBox: { backgroundColor: "#f6fafa", borderRadius: 8, padding: 10, marginTop: 8 },
+  closeInfo: { color: TEAL, fontWeight: "700", marginTop: 6 },
 });

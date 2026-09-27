@@ -63,6 +63,30 @@ router.get("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// GET /api/competitions/mine?userId=xxx — the caller's participation across competitions
+// (registered BEFORE /:idOrSlug so "mine" is never treated as a slug).
+router.get("/mine", async (req, res, next) => {
+  try {
+    const userId = requireUserId(String(req.query.userId || ""));
+    if (!userId) return res.status(401).json({ error: "Authentication required (valid userId)" });
+    const regs = await Registration.find({ competition: { $exists: true }, userId })
+      .populate("competition")
+      .sort({ updatedAt: -1 })
+      .limit(50);
+    res.json({
+      data: regs
+        .filter((r) => r.competition)
+        .map((r) => ({
+          competition: toCompetitionDTO(r.competition, r.status === "registered" ? r : null),
+          status: r.status,
+          submissionUrl: r.submissionUrl || "",
+          submittedAt: r.submittedAt || null,
+          updatedAt: r.updatedAt,
+        })),
+    });
+  } catch (e) { next(e); }
+});
+
 // GET /api/competitions/:idOrSlug?userId=xxx
 router.get("/:idOrSlug", loadCompetition, async (req, res, next) => {
   try {

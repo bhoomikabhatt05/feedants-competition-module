@@ -238,3 +238,34 @@ describe("competition media", () => {
     assert.equal(r.body.data.prizeVideoUrl, "https://example.com/prize.mp4");
   });
 });
+
+describe("participation + distinct seeds", () => {
+  it("mine requires auth, lists my registrations with competition state", async () => {
+    const bad = await request(app).get("/api/competitions/mine");
+    assert.equal(bad.status, 401);
+    const c = await makeComp({ capacity: 10 });
+    const id = c._id.toString();
+    await request(app).post(`/api/competitions/${id}/register`).send({ userId: "mine-user" });
+    const r = await request(app).get("/api/competitions/mine?userId=mine-user");
+    assert.equal(r.status, 200);
+    assert.ok(Array.isArray(r.body.data));
+    const mine = r.body.data.find((m) => m.competition && String(m.competition.id) === id);
+    assert.ok(mine);
+    assert.equal(mine.status, "registered");
+    assert.equal(mine.competition.isRegistered, true);
+  });
+  it("seeded catalogue has distinct titles (no duplicates)", async () => {
+    const { seedDoc, stateDemoDocs } = require("../src/seedData");
+    const titles = [seedDoc().title, ...stateDemoDocs().map((d) => d.title)];
+    assert.equal(new Set(titles).size, titles.length);
+    const slugs = ["feedants-classical-dance", ...stateDemoDocs().map((d) => d.slug)];
+    assert.equal(new Set(slugs).size, slugs.length);
+  });
+  it("judging parameters carry name + weight from backend", async () => {
+    const { seedDoc } = require("../src/seedData");
+    for (const j of seedDoc().judgingParameters) {
+      assert.ok(j.name);
+      assert.ok(Number.isFinite(j.weight));
+    }
+  });
+});

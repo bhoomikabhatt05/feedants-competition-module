@@ -12,7 +12,8 @@ async function main() {
   const { ensureSeeded } = require("./seedData");
   await ensureSeeded(Competition);
   const app = createApp();
-  app.listen(PORT, () => console.log(`[server] Feedants API listening on :${PORT}`));
+  // Bind all interfaces so a phone on the same Wi-Fi can reach the API via the Mac LAN IP.
+  app.listen(PORT, "0.0.0.0", () => console.log(`[server] Feedants API listening on 0.0.0.0:${PORT}`));
 }
 
 if (require.main === module) {

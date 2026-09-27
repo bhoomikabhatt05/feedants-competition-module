@@ -72,6 +72,7 @@ async function req(path, opts = {}) {
 
 export const api = {
   list: () => req(`/api/competitions`),
+  mine: (userId) => req(`/api/competitions/mine?userId=${encodeURIComponent(userId)}`),
   async detail(slug, userId) {
     const data = await req(`/api/competitions/${slug}?userId=${encodeURIComponent(userId)}`);
     await writeCache(slug, data);
