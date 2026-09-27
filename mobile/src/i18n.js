@@ -20,7 +20,7 @@ const STR = {
   booked: { en: "{a} / {b} Booked", hi: "{a} / {b} बुक" },
   judge: { en: "Judge", hi: "निर्णायक" },
   demoPhoto: { en: "Demo photo", hi: "डेमो फ़ोटो" },
-  introVideo: { en: "Intro Video", hi: "परिचय वीडियो" },
+  mediaUnavailable: { en: "Media unavailable", hi: "मीडिया उपलब्ध नहीं" },  introVideo: { en: "Intro Video", hi: "परिचय वीडियो" },
   regClosesIn: { en: "Registration closes in", hi: "रजिस्ट्रेशन बंद होने में" },
   hurry: { en: "Hurry up!", hi: "जल्दी करें!" },
   importantDates: { en: "Important Dates", hi: "महत्वपूर्ण तिथियाँ" },

@@ -10,7 +10,7 @@ function base() {
     format: "Multi-Win",
     certificateNote: "Winners get certificate",
     // Demo stand-in cover (public sample photo) — the real competition banner goes here.
-    coverImage: "https://picsum.photos/seed/feedants-cover/800/400",
+    coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Bharatanatyam_on_stage_%282022%29.jpg/960px-Bharatanatyam_on_stage_%282022%29.jpg",
     prizeVideoUrl: "",
     prizePool: 1500,
     entryFee: 99,
@@ -21,16 +21,16 @@ function base() {
       role: "Judge",
       bio: "Professional Kathak Dancer",
       experience: "12+ Years of Experience",
-      avatarUrl: "https://i.pravatar.cc/200?img=47",
+      avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Utthara_Unni_Soorya_Parampara_Bharatanatyam_Dancer.jpg",
       // Demo stand-in video (public sample file) — the real judge video URL goes here.
       introVideoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     },
     previousWinners: [
       // Demo stand-in photos/videos (public samples) — real media URLs go here.
-      { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/winner-riya/200/160", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
-      { name: "Aarav Mehta", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/winner-aarav/200/160", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
-      { name: "Neha Verma", rankLabel: "2nd Winner", thumbnailUrl: "https://picsum.photos/seed/winner-neha/200/160", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
-      { name: "Ishita Chou", rankLabel: "3rd Winner", thumbnailUrl: "https://picsum.photos/seed/winner-ishita/200/160", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" },
+      { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/8/8d/Utthara_Unni_Bharatanatyam_Dance_Festival_2.jpg", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
+      { name: "Aarav Mehta", rankLabel: "1st Winner", thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Utthara_Unni_Bharatanatyam_Dance_Festival_3.jpg", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
+      { name: "Neha Verma", rankLabel: "2nd Winner", thumbnailUrl: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Utthara_Unni_Bharatanatyam_Dance_Festival_6.jpg/960px-Utthara_Unni_Bharatanatyam_Dance_Festival_6.jpg", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
+      { name: "Ishita Chou", rankLabel: "3rd Winner", thumbnailUrl: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Utthara_Unni_Bharatanatyam_Dance_Festival_7.jpg/960px-Utthara_Unni_Bharatanatyam_Dance_Festival_7.jpg", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" },
     ],
     about: "This is an online classical dance competition open for all age groups. Participate from anywhere and showcase your talent.",
     aboutMore: " Express your passion through traditional dance. Record a 2–5 min classical performance, upload it during the submission window, and get judged by experts.",
@@ -70,7 +70,7 @@ function seedDoc() {
   return {
     ...base(),
     slug: "feedants-classical-dance",
-    coverImage: "https://picsum.photos/seed/feedants-classical-cover/800/400",
+    coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Bharatanatyam_on_stage_%282022%29.jpg/960px-Bharatanatyam_on_stage_%282022%29.jpg",
     prizeVideoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_2MB.mp4",
     dates: {
       // Registration closes ~1d 6h from now so the countdown is always alive
@@ -104,7 +104,7 @@ function stateDemoDocs() {
       entryFee: 49,
       capacity: 50,
       bookedSpots: 12,
-      coverImage: "https://picsum.photos/seed/urban-photo-cover/800/400",
+      coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4c/Camera-photographer-photography-vintage_%2824326759225%29.jpg/960px-Camera-photographer-photography-vintage_%2824326759225%29.jpg",
       judge: { name: "Arjun Nair", role: "Judge", bio: "Street & Urban Photographer", experience: "8+ Years of Experience", avatarUrl: "", introVideoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
       dates: {
         registerBefore: new Date(now + 2 * D2),
@@ -113,8 +113,8 @@ function stateDemoDocs() {
         resultDate: new Date(now + 16 * D2),
       },
       previousWinners: [
-        { name: "Kabir Rao", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/photo-kabir/200/160", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
-        { name: "Sara Khan", rankLabel: "2nd Winner", thumbnailUrl: "https://picsum.photos/seed/photo-sara/200/160", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
+        { name: "Kabir Rao", rankLabel: "1st Winner", thumbnailUrl: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/A_woman_stands_outdoors%2C_holding_a_vintage_camera_in_one_hand.jpg/960px-A_woman_stands_outdoors%2C_holding_a_vintage_camera_in_one_hand.jpg", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
+        { name: "Sara Khan", rankLabel: "2nd Winner", thumbnailUrl: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/A_vintage_camera_is_placed_on_an_old_map.jpg/960px-A_vintage_camera_is_placed_on_an_old_map.jpg", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
       ],
       about: "An online street and urban photography challenge open to all skill levels. Shoot your city and tell its story.",
       aboutMore: " Submit 3–5 original urban photographs during the submission window. Judged by professional photographers.",
@@ -148,7 +148,7 @@ function stateDemoDocs() {
       entryFee: 149,
       capacity: 30,
       bookedSpots: 9,
-      coverImage: "https://picsum.photos/seed/indie-music-cover/800/400",
+      coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Acoustic_Guitar_Solo_%28240361337%29.jpeg/960px-Acoustic_Guitar_Solo_%28240361337%29.jpeg",
       judge: { name: "Devika Menon", role: "Judge", bio: "Independent Singer-Songwriter", experience: "10+ Years of Experience", avatarUrl: "", introVideoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
       dates: {
         registerBefore: new Date(now - 2 * D2),
@@ -157,7 +157,7 @@ function stateDemoDocs() {
         resultDate: new Date(now + 10 * D2),
       },
       previousWinners: [
-        { name: "Rohan Das", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/music-rohan/200/160", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
+        { name: "Rohan Das", rankLabel: "1st Winner", thumbnailUrl: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/DSCF1138_A_street_musician_sings_and_plays_acoustic_guitar_into_a_microphone_as_evening_settles_in_palm_trees_and_market_stalls_visible_in_the_background.jpg/960px-DSCF1138_A_street_musician_sings_and_plays_acoustic_guitar_into_a_microphone_as_evening_settles_in_palm_trees_and_market_stalls_visible_in_the_background.jpg", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
       ],
       about: "An online showcase for independent musicians. Upload one original track and perform it live on video.",
       aboutMore: " Any genre welcome. Finalists are featured on the Feedants community playlist.",
@@ -193,7 +193,7 @@ function stateDemoDocs() {
       entryFee: 0,
       capacity: 100,
       bookedSpots: 34,
-      coverImage: "https://picsum.photos/seed/digital-art-cover/800/400",
+      coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Artist_creating_a_vibrant_painting_of_blue_feathers_in_a_cozy_studio_with_bright_walls_and_flowing_natural_light.jpg/960px-Artist_creating_a_vibrant_painting_of_blue_feathers_in_a_cozy_studio_with_bright_walls_and_flowing_natural_light.jpg",
       judge: { name: "Meera Iyer", role: "Judge", bio: "Digital Illustrator", experience: "6+ Years of Experience", avatarUrl: "", introVideoUrl: "" },
       dates: {
         registerBefore: new Date(now - 9 * D2),
@@ -232,7 +232,7 @@ function stateDemoDocs() {
       entryFee: 29,
       capacity: 40,
       bookedSpots: 5,
-      coverImage: "https://picsum.photos/seed/writing-cover/800/400",
+      coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Old_typewriter_on_brown_wooden_desk_closeup.jpg/960px-Old_typewriter_on_brown_wooden_desk_closeup.jpg",
       judge: { name: "Anand Prakash", role: "Judge", bio: "Author & Editor", experience: "15+ Years of Experience", avatarUrl: "", introVideoUrl: "" },
       dates: {
         registerBefore: new Date(now - 4 * D2),
@@ -273,8 +273,8 @@ function stateDemoDocs() {
       entryFee: 49,
       capacity: 20,
       bookedSpots: 20,
-      coverImage: "https://picsum.photos/seed/monsoon-dance-cover/800/400",
-      judge: { name: "Manju Dubey", role: "Judge", bio: "Professional Kathak Dancer", experience: "12+ Years of Experience", avatarUrl: "", introVideoUrl: "" },
+      coverImage: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/Khajuraho_Dance_Festival_2025_01.webm/960px--Khajuraho_Dance_Festival_2025_01.webm.jpg",
+      judge: { name: "Manju Dubey", role: "Judge", bio: "Professional Kathak Dancer", experience: "12+ Years of Experience", avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Utthara_Unni_Soorya_Parampara_Bharatanatyam_Dancer.jpg", introVideoUrl: "" },
       dates: {
         registerBefore: new Date(now - 20 * D2),
         submissionStarts: new Date(now - 19 * D2),
@@ -282,7 +282,7 @@ function stateDemoDocs() {
         resultDate: new Date(now - 1 * D2),
       },
       previousWinners: [
-        { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/winner-riya/200/160", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
+        { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/8/8d/Utthara_Unni_Bharatanatyam_Dance_Festival_2.jpg", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
       ],
       about: "A completed demo festival kept so result-declared state can be reviewed.",
       aboutMore: "",
@@ -327,16 +327,30 @@ async function ensureSeeded(Competition) {
     await Testimonial.insertMany(testimonialSeeds(flagship._id));
     console.log("[db] seeded demo testimonials");
   }
-  // Refresh placeholder/unplayable media from earlier seeds to verified demo samples.
-  const currentIntro = flagship ? (flagship.judge.introVideoUrl || "") : "";
-  if (flagship && (currentIntro.includes("example.com") || currentIntro.includes("googleapis.com"))) {
-    const fresh = seedDoc();
-    flagship.judge.introVideoUrl = fresh.judge.introVideoUrl;
-    flagship.previousWinners = fresh.previousWinners;
-    flagship.coverImage = fresh.coverImage;
-    flagship.prizeVideoUrl = fresh.prizeVideoUrl;
-    await flagship.save();
-    console.log("[db] refreshed demo media URLs");
+  // Refresh stale placeholder media from earlier seeds to the curated demo set.
+  const staleMedia = (c) =>
+    !c ||
+    (c.coverImage || "").includes("picsum") ||
+    (c.coverImage || "").includes("example.com") ||
+    ((c.judge && c.judge.avatarUrl) || "").includes("pravatar") ||
+    ((c.judge && c.judge.introVideoUrl) || "").includes("example.com") ||
+    ((c.judge && c.judge.introVideoUrl) || "").includes("googleapis.com") ||
+    (c.previousWinners || []).some((w) => (w.thumbnailUrl || "").includes("picsum"));
+  const freshBySlug = {};
+  freshBySlug["feedants-classical-dance"] = seedDoc();
+  for (const doc of stateDemoDocs()) freshBySlug[doc.slug] = doc;
+  for (const slug of Object.keys(freshBySlug)) {
+    const comp = await Competition.findOne({ slug });
+    if (comp && staleMedia(comp)) {
+      const fresh = freshBySlug[slug];
+      comp.coverImage = fresh.coverImage;
+      comp.judge.avatarUrl = fresh.judge.avatarUrl;
+      comp.judge.introVideoUrl = fresh.judge.introVideoUrl;
+      comp.previousWinners = fresh.previousWinners;
+      if (!comp.prizeVideoUrl) comp.prizeVideoUrl = fresh.prizeVideoUrl;
+      await comp.save();
+      console.log(`[db] refreshed demo media for ${slug}`);
+    }
   }
 }
 

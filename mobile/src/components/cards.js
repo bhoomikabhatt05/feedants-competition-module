@@ -26,17 +26,33 @@ export function TopBar({ lang, setLang, t, onBack }) {
   );
 }
 
-export function CoverPhoto({ uri, title }) {
+export function CoverPhoto({ uri, title, t }) {
   const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
   if (!uri || failed) {
     return (
       <View style={[s.cover, s.coverFallback]}>
         <Text style={s.coverFallbackT}>🎭  {title}</Text>
+        <Text style={s.coverFallbackS}>{t ? t("mediaUnavailable") : "Media unavailable"}</Text>
       </View>
     );
   }
   return (
-    <Image source={{ uri }} style={s.cover} resizeMode="cover" onError={() => setFailed(true)} accessibilityLabel="Competition cover" />
+    <View style={s.coverWrap}>
+      {loading && (
+        <View style={[s.cover, s.coverLoading]}>
+          <ActivityIndicator size="large" color={TEAL} />
+        </View>
+      )}
+      <Image
+        source={{ uri }}
+        style={s.coverImg}
+        resizeMode="cover"
+        onLoadEnd={() => setLoading(false)}
+        onError={() => { setLoading(false); setFailed(true); }}
+        accessibilityLabel="Competition cover"
+      />
+    </View>
   );
 }
 
@@ -572,8 +588,12 @@ const s = StyleSheet.create({
   param: { marginBottom: 8 },
   paramName: { color: INK, fontWeight: "700", fontSize: 13 },
   cover: { width: "100%", height: 168, borderRadius: 12, marginBottom: 12, backgroundColor: "#dfe9ea" },
+  coverWrap: { marginBottom: 12 },
+  coverImg: { width: "100%", height: 168, borderRadius: 12, backgroundColor: "#dfe9ea" },
+  coverLoading: { position: "absolute", width: "100%", alignItems: "center", justifyContent: "center" },
   coverFallback: { backgroundColor: "#0e7482", alignItems: "center", justifyContent: "center" },
   coverFallbackT: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  coverFallbackS: { color: "#d7ecee", fontSize: 12, marginTop: 2 },
   avatarImg: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#f3e2d3" },
   adSlot: { backgroundColor: "#f1f5f6", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginBottom: 12 },
   adSlotT: { color: MUTED, fontWeight: "700", fontSize: 12 },

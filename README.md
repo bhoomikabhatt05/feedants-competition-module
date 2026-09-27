@@ -117,8 +117,10 @@ The server also **auto-seeds on boot** (idempotent, stable slugs): `feedants-cla
 Challenge (registration_closed), Monsoon Dance Fest (result_declared) — so every lifecycle state is
 demonstrable and Explore/Competitions listings show distinct titles. The flagship mirrors the
 design: prize ₹1500, fee ₹99, capacity 20 (1 booked), judge Manju Dubey, rewards ₹550–80.
-Judge/winner video URLs and testimonials are seeded **demo/sample content** (public sample video files,
-`isDemo: true` reviews) — stand-ins until real media is provided.
+Judge/winner/judge-portrait photos are category-relevant **demo stand-ins** (freely licensed
+Wikimedia Commons dance, camera, guitar, studio and typewriter photos — verified `200 image/*`),
+videos are public sample MP4s, and testimonials are `isDemo: true` reviews — stand-ins until real
+Feedants media is provided. They are served from the backend like production media would be.
 
 ## Running Backend
 
@@ -279,7 +281,8 @@ cd mobile && npx expo export --platform android    # Android bundle must build c
 
 - Payments are DEMO/MOCK only — no real money, no Razorpay secrets anywhere near the app.
 - Submissions record URL + metadata; no cloud storage, transcoding, or binary upload yet.
-- Judge/winner videos play public sample files as demo stand-ins; testimonials are seeded samples (`isDemo`).
+- Judge/winner/judge-portrait photos are category-relevant demo stand-ins (Wikimedia Commons);
+  videos play public sample MP4s; testimonials are seeded samples (`isDemo`). None is real Feedants media.
 - Auth is a demo device id, not JWT (protected routes still require a valid one; invalid → 401).
 - Offline app shows last synced data marked stale, or a retry screen if never synced.
 - `mobile/.expo`, `.DS_Store`, and `node_modules` are never committed (gitignored).

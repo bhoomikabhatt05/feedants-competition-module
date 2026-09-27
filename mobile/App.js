@@ -306,7 +306,7 @@ export default function App() {
               <Text style={st.offlineT}>{t("offline")}{error ? ` (${error})` : ""}</Text>
             </View>
           )}
-          <CoverPhoto uri={comp.coverImage} title={comp.title} />
+          <CoverPhoto uri={comp.coverImage} title={comp.title} t={t} />
           <TitleCard c={comp} t={t} />
           <JudgeCard c={comp} t={t} onPlay={() => openVideo("Judge Intro", comp.judge.introVideoUrl)} />
           {comp.state === "registration_open" && (
