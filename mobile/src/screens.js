@@ -291,21 +291,36 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
 
   useEffect(() => { load(); }, []);
 
-  const shown = mine.filter((m) => filter === "all" || partOf(m) === filter);
+  const chipsRow = { flexDirection: "row", alignItems: "center", paddingVertical: 8, gap: 8 };
+  const chip = {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: "#eef3f4",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+    flexGrow: 0,
+    flexShrink: 0,
+    marginRight: 8,
+  };
+  const chipOn = { backgroundColor: TEAL };
+  const chipT = { color: INK, fontWeight: "600", fontSize: 13 };
+  const chipTOn = { color: "#fff" };
 
   return (
     <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <Text style={st.hero}>{t("competitions")}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.chips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={chipsRow}>
         {PART_FILTERS.map((f) => (
           <TouchableOpacity
             key={f}
-            style={[st.chip, filter === f && st.chipOn]}
+            style={[chip, filter === f && chipOn]}
             onPress={() => setFilter(f)}
             accessibilityRole="button"
             accessibilityState={{ selected: filter === f }}
           >
-            <Text style={[st.chipT, filter === f && st.chipTOn]}>{t("f" + f[0].toUpperCase() + f.slice(1))}</Text>
+            <Text style={[chipT, filter === f && chipTOn]}>{t("f" + f[0].toUpperCase() + f.slice(1))}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -326,6 +341,7 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
             const action = m.submittedAt ? t("viewSubmission") : c.canUploadSubmission ? t("continueSubmission") : t("viewCompetition");
             return (
               <View key={String(c.id || c.slug)} style={st.partCard}>
+                <Image source={{ uri: c.coverImage }} style={st.partCover} resizeMode="cover" onError={() => {}} />
                 <TouchableOpacity onPress={() => onOpenCompetition(c.slug)} accessibilityRole="button" accessibilityLabel={c.title}>
                   <Text style={st.partTitle}>{c.title}</Text>
                   <Text style={st.muted}>{c.category} • {c.state}</Text>
@@ -335,7 +351,7 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={st.partBtn} onPress={() => onOpenCompetition(c.slug)}>
-                  <Text style={st.partBtnT}>{action}</Text>
+                  <Text style={st.partBtnT}>{action} →</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -499,9 +515,10 @@ const st = StyleSheet.create({
   heroCard: { width: 300, marginRight: 4 },
   railCard: { width: 260, marginRight: 4 },
   catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  catCard: { width: "31%", backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden", marginBottom: 2 },
+  catCard: { width: "48%", backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden", marginBottom: 2 },
   catImg: { width: "100%", height: 64 },
   catName: { fontWeight: "800", color: INK, fontSize: 12, paddingHorizontal: 8, paddingTop: 6 },
+  catCount: { color: MUTED, fontSize: 11, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 2 },
   mini: { width: 110, marginRight: 12 },
   miniImg: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#dfe9ea" },
   miniN: { fontWeight: "700", color: INK, fontSize: 12, marginTop: 4, textAlign: "center" },
@@ -515,16 +532,17 @@ const st = StyleSheet.create({
   referBannerT: { fontWeight: "800", color: INK, fontSize: 15 },
   referBannerS: { color: MUTED, fontSize: 13, marginTop: 2 },
   search: { backgroundColor: "#fff", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#e6efef", marginBottom: 4 },
-  chips: { gap: 8, paddingVertical: 8 },
-  chip: { backgroundColor: "#eef3f4", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, marginRight: 8 },
+  chips: { flexDirection: "row", alignItems: "center", paddingVertical: 8, gap: 8 },
+  chip: { height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: "#eef3f4", alignItems: "center", justifyContent: "center", alignSelf: "flex-start", flexGrow: 0, flexShrink: 0, marginRight: 8 },
   chipOn: { backgroundColor: TEAL },
-  chipT: { color: INK, fontWeight: "600" },
+  chipT: { color: INK, fontWeight: "600", fontSize: 13 },
   chipTOn: { color: "#fff" },
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e6efef" },
   lbl: { color: MUTED, fontSize: 12 },
   val: { color: INK, fontWeight: "800", fontSize: 15 },
-  partCard: { backgroundColor: "#fff", borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: "#e6efef" },
-  partTitle: { fontWeight: "800", color: INK, fontSize: 15 },
+  partCard: { backgroundColor: "#fff", borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden" },
+  partCover: { width: "100%", height: 120, backgroundColor: "#dfe9ea" },
+  partTitle: { fontWeight: "800", color: INK, fontSize: 15, padding: 12, paddingBottom: 0 },
   partBtn: { marginTop: 8, alignSelf: "flex-start", backgroundColor: "#e8f4f5", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   partBtnT: { color: TEAL, fontWeight: "700" },
   whoRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
