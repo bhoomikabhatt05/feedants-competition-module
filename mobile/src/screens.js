@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Share } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Share, Image } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { api, getUserId, SLUG } from "./api";
 import { CompetitionCard, TEAL, INK, MUTED } from "./components/cards";
+import { coverFor, WINNER_PHOTOS } from "./fallbackImages";
 import { formatDateTime } from "./hooks";
 
 function ScreenState({ loading, error, empty, onRetry, loadingText, children }) {
@@ -34,7 +35,8 @@ function ScreenState({ loading, error, empty, onRetry, loadingText, children }) 
 }
 
 export function HomeScreen({ t, onOpenCompetition, onGo }) {
-  const [comp, setComp] = useState(null);
+  const [featured, setFeatured] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -43,7 +45,9 @@ export function HomeScreen({ t, onOpenCompetition, onGo }) {
       setError("");
       setLoading(true);
       const userId = await getUserId();
-      setComp(await api.detail(SLUG, userId));
+      const [f, all] = await Promise.all([api.detail(SLUG, userId), api.list()]);
+      setFeatured(f);
+      setItems(all);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -53,27 +57,116 @@ export function HomeScreen({ t, onOpenCompetition, onGo }) {
 
   useEffect(() => { load(); }, []);
 
+  const open = items.filter((c) => c.state === "registration_open");
+  const closing = [...open]
+    .sort((a, b) => new Date(a.dates.registerBefore) - new Date(b.dates.registerBefore))
+    .slice(0, 5);
+  const cats = [...new Set(items.map((c) => c.category))].slice(0, 6);
+  const winners = (featured && featured.previousWinners) || [];
+
   return (
     <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
-      <Text style={st.hero}>Feedants</Text>
+      <Text style={st.brand}>Feedants</Text>
+      <Text style={st.hero}>{t("discover")}</Text>
       <Text style={st.sub}>{t("tagline")}</Text>
       <ScreenState loading={loading} error={error} onRetry={load} loadingText={t("loading")}>
-        {comp && (
-          <CompetitionCard item={comp} t={t} onOpen={() => onOpenCompetition(comp.slug)} />
+        {open.length > 0 && (
+          <View>
+            <Text style={st.secT}>{t("featured")}</Text>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={300}
+              decelerationRate="fast"
+            >
+              {open.slice(0, 5).map((c) => (
+                <View key={c.slug} style={st.heroCard}>
+                  <CompetitionCard item={c} t={t} onOpen={() => onOpenCompetition(c.slug)} />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         )}
-      </ScreenState>
-      {comp && (
-        <View style={st.quickRow}>
-          <TouchableOpacity style={st.quick} onPress={() => onOpenCompetition(comp.slug)} accessibilityRole="button" accessibilityLabel={t("viewDetails")}>
-            <Text style={st.quickT}>{t("viewDetails")}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={st.quick} onPress={() => onGo("competitions")} accessibilityRole="button" accessibilityLabel={t("allCompetitions")}>
-            <Text style={st.quickT}>{t("allCompetitions")}</Text>
-          </TouchableOpacity>
+        {closing.length > 0 && (
+          <View>
+            <Text style={st.secT}>{t("closingSoon")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {closing.map((c) => (
+                <View key={c.slug} style={st.railCard}>
+                  <CompetitionCard item={c} t={t} onOpen={() => onOpenCompetition(c.slug)} />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+        {cats.length > 0 && (
+          <View>
+            <Text style={st.secT}>{t("browseByCat")}</Text>
+            <View style={st.catGrid}>
+              {cats.map((cat) => {
+                const n = items.filter((c) => c.category === cat).length;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={st.catCard}
+                    onPress={() => onGo("explore")}
+                    accessibilityRole="button"
+                    accessibilityLabel={cat}
+                  >
+                    <Image source={coverFor(cat)} style={st.catImg} resizeMode="cover" />
+                    <Text style={st.catName}>{cat}</Text>
+                    <Text style={st.muted}>{n} {n === 1 ? "event" : "events"}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+        {winners.length > 0 && (
+          <View>
+            <Text style={st.secT}>{t("meetWinners")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {winners.map((w, i) => (
+                <WinnerMini key={`${w.name}-${i}`} w={w} fb={WINNER_PHOTOS[i % WINNER_PHOTOS.length]} onOpen={() => onOpenCompetition(featured.slug)} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+        <Text style={st.secT}>{t("howItWorks")}</Text>
+        <View style={st.steps}>
+          {[[t("step1T"), t("step1S")], [t("step2T"), t("step2S")], [t("step3T"), t("step3S")]].map(([title, sub], i) => (
+            <View key={i} style={st.step}>
+              <View style={st.stepNum}><Text style={st.stepNumT}>{i + 1}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text style={st.stepT}>{title}</Text>
+                <Text style={st.muted}>{sub}</Text>
+              </View>
+            </View>
+          ))}
         </View>
-      )}
+        <TouchableOpacity style={st.referBanner} onPress={() => onOpenCompetition(SLUG)} accessibilityRole="button" accessibilityLabel={t("referTitle")}>
+          <Text style={st.referBannerT}>📢 {t("referTitle")}</Text>
+          <Text style={st.referBannerS}>{t("referBannerSub")}</Text>
+        </TouchableOpacity>
+      </ScreenState>
       <View style={{ height: 100 }} />
     </ScrollView>
+  );
+}
+
+function WinnerMini({ w, fb, onOpen }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <TouchableOpacity style={st.mini} onPress={onOpen} accessibilityRole="button" accessibilityLabel={w.name}>
+      {w.thumbnailUrl && !failed ? (
+        <Image source={{ uri: w.thumbnailUrl }} style={st.miniImg} resizeMode="cover" onError={() => setFailed(true)} />
+      ) : (
+        <Image source={fb} style={st.miniImg} resizeMode="cover" />
+      )}
+      <Text style={st.miniN} numberOfLines={1}>{w.name}</Text>
+      <Text style={st.miniR}>{w.rankLabel}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -393,6 +486,7 @@ export function ProfileScreen({ t, lang, setLang, onOpenCompetition, onExplore }
 
 const st = StyleSheet.create({
   body: { padding: 14, paddingTop: 48, flexGrow: 1 },
+  brand: { fontSize: 13, fontWeight: "800", color: TEAL, letterSpacing: 2 },
   hero: { fontSize: 24, fontWeight: "800", color: INK },
   sub: { color: MUTED, fontSize: 13, marginBottom: 12 },
   secT: { fontWeight: "800", color: INK, marginVertical: 8 },
@@ -402,8 +496,24 @@ const st = StyleSheet.create({
   retry: { backgroundColor: TEAL, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 8 },
   retryT: { color: "#fff", fontWeight: "800" },
   quickRow: { flexDirection: "row", gap: 10, marginTop: 4 },
-  quick: { flex: 1, backgroundColor: "#fff", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#e6efef" },
-  quickT: { color: TEAL, fontWeight: "700" },
+  heroCard: { width: 300, marginRight: 4 },
+  railCard: { width: 260, marginRight: 4 },
+  catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  catCard: { width: "31%", backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden", marginBottom: 2 },
+  catImg: { width: "100%", height: 64 },
+  catName: { fontWeight: "800", color: INK, fontSize: 12, paddingHorizontal: 8, paddingTop: 6 },
+  mini: { width: 110, marginRight: 12 },
+  miniImg: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#dfe9ea" },
+  miniN: { fontWeight: "700", color: INK, fontSize: 12, marginTop: 4, textAlign: "center" },
+  miniR: { color: TEAL, fontSize: 11, textAlign: "center" },
+  steps: { gap: 8, marginBottom: 4 },
+  step: { flexDirection: "row", gap: 10, backgroundColor: "#fff", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#e6efef", alignItems: "center" },
+  stepNum: { width: 32, height: 32, borderRadius: 16, backgroundColor: TEAL, alignItems: "center", justifyContent: "center" },
+  stepNumT: { color: "#fff", fontWeight: "800" },
+  stepT: { fontWeight: "800", color: INK },
+  referBanner: { backgroundColor: "#e7f6ec", borderRadius: 12, padding: 14, marginTop: 8 },
+  referBannerT: { fontWeight: "800", color: INK, fontSize: 15 },
+  referBannerS: { color: MUTED, fontSize: 13, marginTop: 2 },
   search: { backgroundColor: "#fff", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#e6efef", marginBottom: 4 },
   chips: { gap: 8, paddingVertical: 8 },
   chip: { backgroundColor: "#eef3f4", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, marginRight: 8 },

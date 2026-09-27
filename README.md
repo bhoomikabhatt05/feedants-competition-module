@@ -121,6 +121,8 @@ Judge/winner/judge-portrait photos are category-relevant **demo stand-ins** (fre
 Wikimedia Commons dance, camera, guitar, studio and typewriter photos — verified `200 image/*`),
 videos are public sample MP4s, and testimonials are `isDemo: true` reviews — stand-ins until real
 Feedants media is provided. They are served from the backend like production media would be.
+The same photos are bundled under `mobile/assets/` as offline fallbacks, so the UI always shows
+real photography even if a remote fetch fails.
 
 ## Running Backend
 

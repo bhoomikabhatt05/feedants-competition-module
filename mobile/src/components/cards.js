@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, Modal, Act
 import * as Clipboard from "expo-clipboard";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEventListener } from "expo";
+import { coverFor, DEFAULT_COVER, JUDGE_PHOTO, WINNER_PHOTOS } from "../fallbackImages";
 import { formatMs, useCountdown, formatDateTime } from "../hooks";
 
 export const TEAL = "#0e7482";
@@ -26,24 +27,16 @@ export function TopBar({ lang, setLang, t, onBack }) {
   );
 }
 
-export function CoverPhoto({ uri, title, t }) {
+export function CoverPhoto({ uri, title, t, category }) {
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   if (!uri || failed) {
     return (
-      <View style={[s.cover, s.coverFallback]}>
-        <Text style={s.coverFallbackT}>🎭  {title}</Text>
-        <Text style={s.coverFallbackS}>{t ? t("mediaUnavailable") : "Media unavailable"}</Text>
-      </View>
+      <Image source={coverFor(category)} style={s.cover} resizeMode="cover" accessibilityLabel="Competition cover" />
     );
   }
   return (
     <View style={s.coverWrap}>
-      {loading && (
-        <View style={[s.cover, s.coverLoading]}>
-          <ActivityIndicator size="large" color={TEAL} />
-        </View>
-      )}
       <Image
         source={{ uri }}
         style={s.coverImg}
@@ -52,6 +45,11 @@ export function CoverPhoto({ uri, title, t }) {
         onError={() => { setLoading(false); setFailed(true); }}
         accessibilityLabel="Competition cover"
       />
+      {loading && (
+        <View style={s.coverLoading}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      )}
     </View>
   );
 }
@@ -85,11 +83,14 @@ export function TitleCard({ c, t }) {
 
 export function JudgeCard({ c, t, onPlay }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const danceJudge = (c.category || "") === "Dance";
   return (
     <View style={s.card}>
       <View style={s.row}>
         {c.judge.avatarUrl && !imgFailed ? (
           <Image source={{ uri: c.judge.avatarUrl }} style={s.avatarImg} onError={() => setImgFailed(true)} />
+        ) : danceJudge ? (
+          <Image source={JUDGE_PHOTO} style={s.avatarImg} />
         ) : (
           <View style={s.avatar}><Text style={{ fontSize: 28 }}>👩🏽</Text></View>
         )}
@@ -158,15 +159,16 @@ export function WinnersRow({ c, t, onPlay }) {
           <Text style={s.muted}>{t("winnersSoon")}</Text>
         )}
         {(c.previousWinners || []).map((w, i) => (
-          <WinnerThumb key={i} w={w} onPlay={onPlay} />
+          <WinnerThumb key={w.name ? `${w.name}-${i}` : i} w={w} fb={WINNER_PHOTOS[i % WINNER_PHOTOS.length]} onPlay={onPlay} />
         ))}
       </ScrollView>
     </View>
   );
 }
 
-function WinnerThumb({ w, onPlay }) {
+function WinnerThumb({ w, fb, onPlay }) {
   const [failed, setFailed] = useState(false);
+  const remoteOk = w.thumbnailUrl && !failed;
   return (
     <View style={s.win}>
       <TouchableOpacity
@@ -175,10 +177,10 @@ function WinnerThumb({ w, onPlay }) {
         accessibilityRole="button"
         accessibilityLabel={`Play video by ${w.name}`}
       >
-        {w.thumbnailUrl && !failed ? (
+        {remoteOk ? (
           <Image source={{ uri: w.thumbnailUrl }} style={s.thumb} resizeMode="cover" onError={() => setFailed(true)} />
         ) : (
-          <View style={[s.thumb, s.thumbFallback]} />
+          <Image source={fb || DEFAULT_COVER} style={s.thumb} resizeMode="cover" />
         )}
         <View style={s.winPlay}><Text style={{ color: "#fff", fontSize: 10 }}>▶</Text></View>
       </TouchableOpacity>
@@ -487,7 +489,7 @@ export function CompetitionCard({ item, t, onOpen }) {
       {item.coverImage && !failed ? (
         <Image source={{ uri: item.coverImage }} style={s.compCover} resizeMode="cover" onError={() => setFailed(true)} />
       ) : (
-        <View style={[s.compCover, s.coverFallback]}><Text style={s.coverFallbackT}>🎭</Text></View>
+        <Image source={coverFor(item.category)} style={s.compCover} resizeMode="cover" />
       )}
       <View style={s.compBody}>
         <View style={s.rowBetween}>
@@ -549,7 +551,6 @@ const s = StyleSheet.create({
   win: { width: 110, marginRight: 12 },
   thumb: { width: 100, height: 80, borderRadius: 10, backgroundColor: "#dfe9ea" },
   thumbBtn: { borderRadius: 10 },
-  thumbFallback: { backgroundColor: "#dfe9ea", alignItems: "center", justifyContent: "center" },
   winPlay: { position: "absolute", alignSelf: "center", top: 26, width: 28, height: 28, borderRadius: 14, backgroundColor: TEAL, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" },
   winN: { fontWeight: "700", color: INK, fontSize: 12, marginTop: 4 },
   winR: { color: TEAL, fontSize: 11 },
@@ -590,10 +591,7 @@ const s = StyleSheet.create({
   cover: { width: "100%", height: 168, borderRadius: 12, marginBottom: 12, backgroundColor: "#dfe9ea" },
   coverWrap: { marginBottom: 12 },
   coverImg: { width: "100%", height: 168, borderRadius: 12, backgroundColor: "#dfe9ea" },
-  coverLoading: { position: "absolute", width: "100%", alignItems: "center", justifyContent: "center" },
-  coverFallback: { backgroundColor: "#0e7482", alignItems: "center", justifyContent: "center" },
-  coverFallbackT: { color: "#fff", fontWeight: "800", fontSize: 16 },
-  coverFallbackS: { color: "#d7ecee", fontSize: 12, marginTop: 2 },
+  coverLoading: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
   avatarImg: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#f3e2d3" },
   adSlot: { backgroundColor: "#f1f5f6", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginBottom: 12 },
   adSlotT: { color: MUTED, fontWeight: "700", fontSize: 12 },
