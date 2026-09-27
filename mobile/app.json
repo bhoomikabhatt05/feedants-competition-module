@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Feedants Competition",
+    "slug": "feedants-competition",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "primaryColor": "#0e7482",
+    "web": { "bundler": "metro" }
+  }
+}
