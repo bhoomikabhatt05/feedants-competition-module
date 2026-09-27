@@ -37,8 +37,8 @@ export function TitleCard({ c }) {
         <Text style={s.cert}>🏆  {c.certificateNote}</Text>
       </View>
       <View style={s.statsRow}>
-        <View><Text style={s.lbl}>Prize Pool</Text><Text style={s.prize}>₹ {Number(c.prizePool).toLocaleString("en-IN")}</Text></View>
-        <View><Text style={s.lbl}>Entry Fee</Text><Text style={s.fee}>₹ {c.entryFee}</Text></View>
+        <View style={s.statCol}><Text style={s.lbl}>Prize Pool</Text><Text style={s.prize}>₹ {Number(c.prizePool).toLocaleString("en-IN")}</Text></View>
+        <View style={s.statCol}><Text style={s.lbl}>Entry Fee</Text><Text style={s.fee}>₹ {c.entryFee}</Text></View>
         <View style={{ flex: 1, paddingLeft: 12 }}>
           <Text style={s.spots}>👥  Only {c.spotsLeft} spots left</Text>
           <View style={s.bar}><View style={[s.barFill, { width: `${Math.min(100, (c.bookedSpots / Math.max(1, c.capacity)) * 100)}%` }]} /></View>
@@ -73,10 +73,12 @@ export function CountdownBar({ ms, onExpiry }) {
   const left = useCountdown(ms, onExpiry);
   return (
     <View style={s.countBar}>
-      <Text>⏳</Text>
-      <Text style={s.countLbl}>Registration closes in</Text>
+      <View style={s.countRow}>
+        <Text>⏳</Text>
+        <Text style={s.countLbl}>Registration closes in</Text>
+        <Text style={s.hurry}>⏱ Hurry up!</Text>
+      </View>
       <Text style={s.countT}>{formatMs(left)}</Text>
-      <Text style={s.hurry}>⏱ Hurry up!</Text>
     </View>
   );
 }
@@ -112,7 +114,10 @@ export function WinnersRow({ c }) {
     <View style={s.card}>
       <Text style={s.secT}>Previous Winners</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {c.previousWinners.map((w, i) => (
+        {(c.previousWinners || []).length === 0 && (
+          <Text style={s.muted}>Winners will be announced after results.</Text>
+        )}
+        {(c.previousWinners || []).map((w, i) => (
           <View key={i} style={s.win}>
             <View style={s.thumb}><View style={s.winPlay}><Text style={{ color: "#fff", fontSize: 10 }}>▶</Text></View></View>
             <Text style={s.winN}>{w.name}</Text>
@@ -195,14 +200,14 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned }) 
       <Text style={s.secT}>📢 Refer & Earn more discount</Text>
       <Text style={s.linkBox} numberOfLines={1}>{link}</Text>
       {!!code && <Text style={s.muted}>Your backend code: <Text style={{ fontWeight: "800", color: INK }}>{code}</Text></Text>}
-      <View style={s.row}>
+      <View style={s.btnRow}>
         <TouchableOpacity style={s.copyBtn} onPress={copy}>
           <Text style={s.copyT}>{copied ? "Copied!" : "Copy Link"}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.copyBtn} onPress={share}>
           <Text style={s.copyT}>Share</Text>
         </TouchableOpacity>
-        <View style={{ flex: 1, alignItems: "flex-end" }}>
+        <View style={s.referCta}>
           <View style={s.referBtn}><Text style={{ color: "#fff", fontWeight: "700" }}>Refer Now</Text></View>
           <Text style={s.muted}>You earn ₹{perSignup} per real signup{signupCount != null ? ` • ${signupCount} so far (₹${creditEarned})` : ""}</Text>
         </View>
@@ -239,13 +244,14 @@ const s = StyleSheet.create({
   row2: { flexDirection: "row", gap: 10 },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontSize: 20, fontWeight: "800", color: INK, flex: 1 },
-  regBadge: { backgroundColor: "#e8f4f5", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "#bfe0e4" },
+  regBadge: { backgroundColor: "#e8f4f5", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "#bfe0e4", marginLeft: 8, flexShrink: 0 },
   regBadgeT: { color: TEAL, fontWeight: "700" },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 8 },
   chip: { backgroundColor: "#f1f5f6", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   chipT: { fontWeight: "600", color: INK },
   cert: { color: TEAL, fontWeight: "600" },
   statsRow: { flexDirection: "row", alignItems: "flex-end", gap: 16, marginTop: 4 },
+  statCol: { flexShrink: 0 },
   lbl: { color: MUTED, fontSize: 12 },
   prize: { color: TEAL, fontSize: 26, fontWeight: "800" },
   fee: { color: INK, fontSize: 22, fontWeight: "800" },
@@ -257,9 +263,10 @@ const s = StyleSheet.create({
   judgeName: { fontWeight: "800", fontSize: 16, color: INK },
   muted: { color: MUTED, fontSize: 13 },
   play: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#e8f4f5", alignItems: "center", justifyContent: "center" },
-  countBar: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#e8f4f5", borderRadius: 10, padding: 12, marginBottom: 12 },
-  countLbl: { fontWeight: "700", color: INK },
-  countT: { color: TEAL, fontWeight: "800", flex: 1 },
+  countBar: { backgroundColor: "#e8f4f5", borderRadius: 10, padding: 12, marginBottom: 12 },
+  countRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
+  countLbl: { fontWeight: "700", color: INK, flex: 1 },
+  countT: { color: TEAL, fontWeight: "800", fontSize: 20, letterSpacing: 0.5 },
   hurry: { color: TEAL, fontWeight: "700" },
   secT: { fontWeight: "800", color: INK, marginBottom: 8 },
   grid: { flexDirection: "row", flexWrap: "wrap" },
@@ -270,15 +277,17 @@ const s = StyleSheet.create({
   winPlay: { width: 28, height: 28, borderRadius: 14, backgroundColor: TEAL, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" },
   winN: { fontWeight: "700", color: INK, fontSize: 12, marginTop: 4 },
   winR: { color: TEAL, fontSize: 11 },
-  tabs: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  tab: { color: MUTED, fontWeight: "600", fontSize: 12 },
-  tabOn: { color: TEAL, borderBottomWidth: 2, borderColor: TEAL, paddingBottom: 4 },
+  tabs: { flexDirection: "row", marginBottom: 8, gap: 4 },
+  tab: { flex: 1, textAlign: "center", color: MUTED, fontWeight: "600", fontSize: 12, paddingBottom: 6 },
+  tabOn: { color: TEAL, borderBottomWidth: 2, borderColor: TEAL },
   link: { color: TEAL, fontWeight: "700" },
   rwRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderBottomWidth: 1, borderColor: "#f0f4f4" },
   rwAmt: { color: TEAL, fontWeight: "800" },
   linkBox: { borderWidth: 1, borderColor: "#bfe0e4", borderRadius: 8, padding: 8, color: TEAL, backgroundColor: "#fff", marginVertical: 8 },
-  copyBtn: { borderWidth: 1, borderColor: TEAL, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8 },
+  copyBtn: { borderWidth: 1, borderColor: TEAL, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, marginBottom: 8 },
   copyT: { color: TEAL, fontWeight: "700" },
+  btnRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
+  referCta: { flex: 1, alignItems: "flex-end", minWidth: 140 },
   referBtn: { backgroundColor: TEAL, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 10, marginBottom: 4 },
   demoTag: { backgroundColor: "#fff4d6", color: "#9a6b00", fontSize: 10, fontWeight: "800", paddingHorizontal: 6, borderRadius: 4 },
 });

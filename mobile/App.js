@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { api, getUserId, readCache } from "./src/api";
 import { TopBar, TitleCard, JudgeCard, CountdownBar, DatesGrid, WinnersRow, InfoTabs, Rewards, PrizeMoneyCard, ReferCard, HearFromUsers, TEAL, INK, MUTED } from "./src/components/cards";
@@ -131,8 +131,10 @@ export default function App() {
     ? { label: "Upload Submission", sub: comp.registration && comp.registration.submittedAt ? `Submitted ✓ ${new Date(comp.registration.submittedAt).toLocaleString()}` : comp.canUploadSubmission ? "Tap to upload below" : "Registered", onPress: null, disabled: true }
     : { label: comp.state === "full" ? "Competition Full" : comp.state === "registration_open" ? `Register Now • ₹${comp.entryFee} (DEMO)` : "Registration Closed", sub: stateMessage(comp.state), onPress: onRegister, disabled: comp.state !== "registration_open" };
 
+  const ctaDisabled = cta.disabled || busy || !cta.onPress;
+
   return (
-    <View style={st.root}>
+    <KeyboardAvoidingView style={st.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar style="auto" />
       <ScrollView
         contentContainerStyle={st.body}
@@ -188,7 +190,7 @@ export default function App() {
       </ScrollView>
 
       <View style={st.footer}>
-        <TouchableOpacity style={[st.cta, cta.disabled && st.ctaOff]} disabled={cta.disabled || busy || !!cta.onPress === false} onPress={cta.onPress || undefined}>
+        <TouchableOpacity style={[st.cta, ctaDisabled && st.ctaOff]} disabled={ctaDisabled} onPress={cta.onPress || undefined}>
           <Text style={st.ctaT}>{busy ? "Please wait…" : cta.label}</Text>
           {!!cta.sub && <Text style={st.ctaS}>{cta.sub}</Text>}
         </TouchableOpacity>
@@ -198,7 +200,7 @@ export default function App() {
           ))}
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
