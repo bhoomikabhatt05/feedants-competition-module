@@ -1,4 +1,4 @@
-# Feedants Competition Details
+# Feedants Competition Module
 
 Functional Competition Details module for the Feedants Full-Stack Development Internship assignment:
 a **React Native (Expo)** screen backed by **Node.js + Express** APIs and **MongoDB** — not a static UI.
