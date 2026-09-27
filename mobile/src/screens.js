@@ -261,6 +261,35 @@ export function ExploreScreen({ t, onOpenCompetition }) {
 
 const PART_FILTERS = ["all", "registered", "submitting", "submitted", "completed"];
 
+function RemoteCover({ uri, category, style }) {
+  const [failed, setFailed] = useState(false);
+  const src = uri && !failed ? { uri } : coverFor(category);
+  return (
+    <Image
+      source={src}
+      style={style}
+      resizeMode="cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function PartCard({ c, t, action, onOpen }) {
+  return (
+    <TouchableOpacity style={st.partCard} onPress={onOpen} accessibilityRole="button" accessibilityLabel={c.title}>
+      <RemoteCover uri={c.coverImage} category={c.category} style={st.partCover} />
+      <Text style={st.partTitle}>{c.title}</Text>
+      <Text style={st.partMeta}>{c.category} • {c.state}</Text>
+      <Text style={st.partMeta}>
+        {t("registerBefore")}: {formatDateTime(c.dates.registerBefore).date}
+      </Text>
+      <TouchableOpacity style={st.partBtn} onPress={onOpen}>
+        <Text style={st.partBtnT}>{action} →</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+}
+
 function partOf(m) {
   // m: { competition, status, submissionUrl, submittedAt }
   if (m.status !== "registered") return "completed";
@@ -342,20 +371,7 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
             const c = m.competition;
             const action = m.submittedAt ? t("viewSubmission") : c.canUploadSubmission ? t("continueSubmission") : t("viewCompetition");
             return (
-              <View key={String(c.id || c.slug)} style={st.partCard}>
-                <Image source={{ uri: c.coverImage }} style={st.partCover} resizeMode="cover" onError={() => {}} />
-                <TouchableOpacity onPress={() => onOpenCompetition(c.slug)} accessibilityRole="button" accessibilityLabel={c.title}>
-                  <Text style={st.partTitle}>{c.title}</Text>
-                  <Text style={st.muted}>{c.category} • {c.state}</Text>
-                  <Text style={st.muted}>
-                    {t("registerBefore")}: {formatDateTime(c.dates.registerBefore).date}
-                    {m.submittedAt ? ` • ${t("submittedTick")} ${new Date(m.submittedAt).toLocaleDateString()}` : ""}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={st.partBtn} onPress={() => onOpenCompetition(c.slug)}>
-                  <Text style={st.partBtnT}>{action} →</Text>
-                </TouchableOpacity>
-              </View>
+              <PartCard key={String(c.id || c.slug)} c={c} t={t} action={action} onOpen={() => onOpenCompetition(c.slug)} />
             );
           })
         )}
@@ -439,7 +455,7 @@ export function ProfileScreen({ t, lang, setLang, onOpenCompetition, onExplore }
         {registered.map((m) => (
           <TouchableOpacity key={String(m.competition.id)} style={st.partCard} onPress={() => onOpenCompetition(m.competition.slug)}>
             <Text style={st.partTitle}>{m.competition.title}</Text>
-            <Text style={st.muted}>{m.competition.state} • {t("registerBefore")}: {formatDateTime(m.competition.dates.registerBefore).date}</Text>
+            <Text style={st.partMeta}>{m.competition.state} • {t("registerBefore")}: {formatDateTime(m.competition.dates.registerBefore).date}</Text>
             <Text style={st.partBtnT}>{m.submittedAt ? t("viewSubmission") : m.competition.canUploadSubmission ? t("continueSubmission") : t("viewCompetition")} →</Text>
           </TouchableOpacity>
         ))}
@@ -542,9 +558,10 @@ const st = StyleSheet.create({
   card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e6efef" },
   lbl: { color: MUTED, fontSize: 12 },
   val: { color: INK, fontWeight: "800", fontSize: 15 },
-  partCard: { backgroundColor: "#fff", borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden" },
-  partCover: { width: "100%", height: 120, backgroundColor: "#dfe9ea" },
-  partTitle: { fontWeight: "800", color: INK, fontSize: 15, padding: 12, paddingBottom: 0 },
+  partCard: { backgroundColor: "#fff", borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden", padding: 12 },
+  partCover: { width: "100%", height: 120, borderRadius: 8, backgroundColor: "#dfe9ea", marginBottom: 8 },
+  partTitle: { fontWeight: "800", color: INK, fontSize: 15, flexShrink: 1 },
+  partMeta: { color: MUTED, fontSize: 13, flexShrink: 1 },
   partBtn: { marginTop: 8, alignSelf: "flex-start", backgroundColor: "#e8f4f5", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   partBtnT: { color: TEAL, fontWeight: "700" },
   whoRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
