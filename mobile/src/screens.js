@@ -291,6 +291,8 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
 
   useEffect(() => { load(); }, []);
 
+  const shown = mine.filter((m) => filter === "all" || partOf(m) === filter);
+
   const chipsRow = { flexDirection: "row", alignItems: "center", paddingVertical: 8, gap: 8 };
   const chip = {
     height: 40,
