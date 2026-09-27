@@ -88,6 +88,7 @@ export const api = {
       body: JSON.stringify({ userId, submissionUrl, fileType, fileSizeBytes }),
     }),
   referral: (userId) => req(`/api/competitions/${SLUG}/referral?userId=${encodeURIComponent(userId)}`),
+  testimonials: () => req(`/api/competitions/${SLUG}/testimonials`),
   mockCheckout: (userId, amount) =>
     req(`/api/payments/mock-checkout`, {
       method: "POST",

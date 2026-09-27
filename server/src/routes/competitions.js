@@ -74,6 +74,24 @@ router.get("/:idOrSlug", loadCompetition, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// GET /api/competitions/:idOrSlug/testimonials — public demo/sample reviews
+router.get("/:idOrSlug/testimonials", loadCompetition, async (req, res, next) => {
+  try {
+    const Testimonial = require("../models/Testimonial");
+    const items = await Testimonial.find({ competition: req.competition._id })
+      .sort({ createdAt: 1 })
+      .limit(20);
+    res.json({
+      data: items.map((t) => ({
+        name: t.name,
+        text: t.text,
+        rating: t.rating,
+        isDemo: t.isDemo,
+      })),
+    });
+  } catch (e) { next(e); }
+});
+
 // GET /api/competitions/:idOrSlug/referral?userId=xxx — backend-generated code
 router.get("/:idOrSlug/referral", loadCompetition, async (req, res, next) => {
   try {

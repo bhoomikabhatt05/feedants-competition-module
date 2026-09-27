@@ -112,12 +112,15 @@ The server also **auto-seeds on boot**: `feedants-classical-dance` (registration
 plus `demo-state-{full,registration-closed,submission-open,submission-closed,result-declared}` so every
 lifecycle state is demonstrable via `GET /api/competitions/<slug>?userId=x`. The flagship mirrors the
 design: prize ₹1500, fee ₹99, capacity 20 (1 booked), judge Manju Dubey, rewards ₹550–80.
+Judge/winner video URLs and testimonials are seeded **demo/sample content** (public sample video files,
+`isDemo: true` reviews) — stand-ins until real media is provided.
 
 ## Running Backend
 
 ```bash
 cd server && npm install && npm test && npm run dev   # http://localhost:4000
 ```
+Express `app.listen(PORT)` binds all interfaces, so a phone on the same Wi-Fi can reach it.
 
 ## Running React Native
 
@@ -126,6 +129,15 @@ cd mobile && npm install
 EXPO_PUBLIC_API_URL=http://<your-lan-ip>:4000 npx expo start
 # `w` = web preview, QR = Expo Go on device. Backend must be reachable at the URL above.
 ```
+
+## Phone testing (same Wi-Fi)
+
+1. Find the Mac LAN IP (e.g. `ipconfig getifaddr en0` → `10.220.84.30`).
+2. Start the backend: `cd server && npm run dev` (listens on `:4000`, reachable at `http://<lan-ip>:4000`).
+3. Start Expo with the phone-reachable URL: `EXPO_PUBLIC_API_URL=http://<lan-ip>:4000 npx expo start --clear`.
+4. Scan the QR in Expo Go. Never use `localhost` for a physical device; never hardcode the LAN IP
+   into source — it stays in the `EXPO_PUBLIC_API_URL` env var only. A "Cannot connect to Expo CLI"
+   dev-menu warning is harmless tooling noise as long as the app and API work.
 
 ## API Endpoints
 
@@ -138,6 +150,7 @@ EXPO_PUBLIC_API_URL=http://<your-lan-ip>:4000 npx expo start
 | POST | `/api/competitions/:slug/cancel {userId}` | userId | 200 (seat released) | 401 · 404 no active registration |
 | POST | `/api/competitions/:slug/submit {userId, submissionUrl, fileType?, fileSizeBytes?}` | registered userId | 200 (URL recorded) | 400 `INVALID_URL/TYPE/SIZE` · 401 · 403 `NOT_REGISTERED` · 409 `WINDOW_CLOSED` |
 | GET | `/api/competitions/:slug/referral?userId=` | userId | 200 `{code, signupCount, creditEarned}` | 401 |
+| GET | `/api/competitions/:slug/testimonials` | no | 200 demo/sample reviews (`isDemo: true`) | 404 unknown slug |
 | POST | `/api/payments/mock-checkout` | — | 200 DEMO intent `{demo:true}` | 400 · 501 if real keys present but unwired |
 
 ## Authentication
@@ -239,6 +252,7 @@ cd mobile && npx expo export --platform web   # Metro web bundle must build clea
 
 - Payments are DEMO/MOCK only — no real money, no Razorpay secrets anywhere near the app.
 - Submissions record URL + metadata; no cloud storage, transcoding, or binary upload yet.
+- Judge/winner videos play public sample files as demo stand-ins; testimonials are seeded samples (`isDemo`).
 - Auth is a demo device id, not JWT (protected routes still require a valid one; invalid → 401).
 - Offline app shows last synced data marked stale, or a retry screen if never synced.
 - `mobile/.expo`, `.DS_Store`, and `node_modules` are never committed (gitignored).

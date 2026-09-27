@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, Modal, ActivityIndicator } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { formatMs, useCountdown, formatDateTime } from "../hooks";
 
 export const TEAL = "#0e7482";
@@ -109,7 +110,7 @@ export function DatesGrid({ c }) {
   );
 }
 
-export function WinnersRow({ c }) {
+export function WinnersRow({ c, onPlay }) {
   return (
     <View style={s.card}>
       <Text style={s.secT}>Previous Winners</Text>
@@ -119,7 +120,9 @@ export function WinnersRow({ c }) {
         )}
         {(c.previousWinners || []).map((w, i) => (
           <View key={i} style={s.win}>
-            <View style={s.thumb}><View style={s.winPlay}><Text style={{ color: "#fff", fontSize: 10 }}>▶</Text></View></View>
+            <TouchableOpacity style={s.thumb} onPress={() => onPlay && onPlay(w)}>
+              <View style={s.winPlay}><Text style={{ color: "#fff", fontSize: 10 }}>▶</Text></View>
+            </TouchableOpacity>
             <Text style={s.winN}>{w.name}</Text>
             <Text style={s.winR}>{w.rankLabel}</Text>
           </View>
@@ -183,14 +186,21 @@ export function PrizeMoneyCard() {
   );
 }
 
-export function ReferCard({ link, code, perSignup, signupCount, creditEarned }) {
+export function ReferCard({ link, code, perSignup, signupCount, creditEarned, onRefer, onShare }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
   const copy = async () => {
-    await Clipboard.setStringAsync(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setCopyError("");
+    try {
+      await Clipboard.setStringAsync(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopyError("Copy failed — long-press the link to copy manually.");
+    }
   };
   const share = async () => {
+    if (onShare) return onShare();
     try {
       await Share.share({ message: `Join me on Feedants! ${link}` });
     } catch {}
@@ -200,6 +210,7 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned }) 
       <Text style={s.secT}>📢 Refer & Earn more discount</Text>
       <Text style={s.linkBox} numberOfLines={1}>{link}</Text>
       {!!code && <Text style={s.muted}>Your backend code: <Text style={{ fontWeight: "800", color: INK }}>{code}</Text></Text>}
+      {!!copyError && <Text style={s.copyErr}>{copyError}</Text>}
       <View style={s.btnRow}>
         <TouchableOpacity style={s.copyBtn} onPress={copy}>
           <Text style={s.copyT}>{copied ? "Copied!" : "Copy Link"}</Text>
@@ -208,7 +219,9 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned }) 
           <Text style={s.copyT}>Share</Text>
         </TouchableOpacity>
         <View style={s.referCta}>
-          <View style={s.referBtn}><Text style={{ color: "#fff", fontWeight: "700" }}>Refer Now</Text></View>
+          <TouchableOpacity style={s.referBtn} onPress={onRefer}>
+            <Text style={{ color: "#fff", fontWeight: "700" }}>Refer Now</Text>
+          </TouchableOpacity>
           <Text style={s.muted}>You earn ₹{perSignup} per real signup{signupCount != null ? ` • ${signupCount} so far (₹${creditEarned})` : ""}</Text>
         </View>
       </View>
@@ -217,9 +230,9 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned }) 
   );
 }
 
-export function HearFromUsers() {
+export function HearFromUsers({ onPress }) {
   return (
-    <View style={s.card}>
+    <TouchableOpacity style={s.card} onPress={onPress}>
       <View style={s.rowBetween}>
         <View>
           <Text style={s.secT}>💬 Hear From Our Users</Text>
@@ -227,7 +240,98 @@ export function HearFromUsers() {
         </View>
         <Text style={{ fontSize: 18 }}>›</Text>
       </View>
+    </TouchableOpacity>
+  );
+}
+
+function PlayerView({ url }) {
+  const [playing, setPlaying] = useState(false);
+  const player = useVideoPlayer(url, (p) => {
+    p.play();
+    setPlaying(true);
+  });
+  const toggle = () => {
+    if (playing) {
+      player.pause();
+      setPlaying(false);
+    } else {
+      player.play();
+      setPlaying(true);
+    }
+  };
+  return (
+    <View>
+      <VideoView style={s.video} player={player} nativeControls contentFit="contain" allowsPictureInPicture />
+      <View style={s.videoBtns}>
+        <TouchableOpacity style={s.playToggle} onPress={toggle}>
+          <Text style={s.playToggleT}>{playing ? "❚❚  Pause" : "▶  Play"}</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={s.muted}>Demo sample video — the real performance video URL comes from the backend.</Text>
     </View>
+  );
+}
+
+export function VideoModal({ visible, title, url, onClose }) {
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={s.overlay}>
+        <View style={s.sheet}>
+          <View style={s.rowBetween}>
+            <Text style={s.secT}>{title || "Video"}</Text>
+            <TouchableOpacity style={s.closeBtn} onPress={onClose}>
+              <Text style={s.closeT}>✕ Close</Text>
+            </TouchableOpacity>
+          </View>
+          {!url || !/^https?:\/\/.+/i.test(url) ? (
+            <View style={s.unavail}>
+              <Text style={s.unavailT}>Video unavailable</Text>
+              <Text style={s.muted}>This competition does not currently provide a video. Please check back later.</Text>
+            </View>
+          ) : (
+            <PlayerView url={url} />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function TestimonialsModal({ visible, items, loading, error, onRetry, onClose }) {
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={s.overlay}>
+        <View style={s.sheet}>
+          <View style={s.rowBetween}>
+            <Text style={s.secT}>💬 Hear From Our Users</Text>
+            <TouchableOpacity style={s.closeBtn} onPress={onClose}>
+              <Text style={s.closeT}>✕ Close</Text>
+            </TouchableOpacity>
+          </View>
+          {loading && (
+            <View style={s.centerBox}><ActivityIndicator size="large" color={TEAL} /><Text style={s.muted}>Loading reviews…</Text></View>
+          )}
+          {!loading && !!error && (
+            <View style={s.centerBox}>
+              <Text style={s.copyErr}>{error}</Text>
+              <TouchableOpacity style={s.retryBtn} onPress={onRetry}>
+                <Text style={s.retryT}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {!loading && !error && (items || []).length === 0 && (
+            <Text style={s.muted}>No reviews yet — be the first to participate.</Text>
+          )}
+          {!loading && !error && (items || []).map((t, i) => (
+            <View key={i} style={s.quote}>
+              <Text style={s.stars}>{"★".repeat(t.rating || 5)}{"☆".repeat(5 - (t.rating || 5))}</Text>
+              <Text style={s.quoteT}>"{t.text}"</Text>
+              <Text style={s.muted}>— {t.name}{t.isDemo ? " · sample review" : ""}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -290,4 +394,21 @@ const s = StyleSheet.create({
   referCta: { flex: 1, alignItems: "flex-end", minWidth: 140 },
   referBtn: { backgroundColor: TEAL, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 10, marginBottom: 4 },
   demoTag: { backgroundColor: "#fff4d6", color: "#9a6b00", fontSize: 10, fontWeight: "800", paddingHorizontal: 6, borderRadius: 4 },
+  copyErr: { color: "#b3261e", marginBottom: 8 },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: "85%" },
+  closeBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: "#f1f5f6" },
+  closeT: { color: INK, fontWeight: "700" },
+  video: { width: "100%", aspectRatio: 16 / 9, borderRadius: 10, backgroundColor: "#000", marginVertical: 8 },
+  videoBtns: { flexDirection: "row", marginBottom: 8 },
+  playToggle: { backgroundColor: TEAL, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+  playToggleT: { color: "#fff", fontWeight: "800" },
+  unavail: { backgroundColor: "#f6fafa", borderRadius: 10, padding: 20, alignItems: "center", marginVertical: 8 },
+  unavailT: { fontWeight: "800", color: INK, fontSize: 16, marginBottom: 4 },
+  centerBox: { alignItems: "center", padding: 20, gap: 10 },
+  retryBtn: { backgroundColor: TEAL, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 8 },
+  retryT: { color: "#fff", fontWeight: "800" },
+  quote: { borderBottomWidth: 1, borderColor: "#f0f4f4", paddingVertical: 10 },
+  stars: { color: "#e8a100", fontWeight: "700", marginBottom: 2 },
+  quoteT: { color: INK, marginBottom: 4 },
 });

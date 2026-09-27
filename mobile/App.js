@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform, Share } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { api, getUserId, readCache } from "./src/api";
-import { TopBar, TitleCard, JudgeCard, CountdownBar, DatesGrid, WinnersRow, InfoTabs, Rewards, PrizeMoneyCard, ReferCard, HearFromUsers, TEAL, INK, MUTED } from "./src/components/cards";
+import { TopBar, TitleCard, JudgeCard, CountdownBar, DatesGrid, WinnersRow, InfoTabs, Rewards, PrizeMoneyCard, ReferCard, HearFromUsers, VideoModal, TestimonialsModal, TEAL, INK, MUTED } from "./src/components/cards";
 
 function stateMessage(state) {
   switch (state) {
@@ -28,6 +28,8 @@ export default function App() {
   const [subUrl, setSubUrl] = useState("");
   const [subError, setSubError] = useState("");
   const [referral, setReferral] = useState(null);
+  const [video, setVideo] = useState(null); // { title, url } | null
+  const [reviews, setReviews] = useState({ visible: false, items: [], loading: false, error: "" });
 
   const load = useCallback(async () => {
     try {
@@ -60,6 +62,33 @@ export default function App() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const openVideo = (title, url) => setVideo({ title, url });
+
+  const referralLink = () => (comp && comp.referral && comp.referral.link) || "https://feedants.com/r/";
+
+  const shareReferral = async () => {
+    try {
+      const result = await Share.share({ message: `Join me on Feedants! ${referralLink()}` });
+      // Dismissing the sheet is not an error — stay silent either way.
+      if (result && result.action === Share.sharedAction) {
+        const ref = await api.referral(await getUserId()).catch(() => null);
+        if (ref) setReferral(ref);
+      }
+    } catch (e) {
+      Alert.alert("Share failed", "Could not open the share sheet. Please try again.");
+    }
+  };
+
+  const openReviews = async () => {
+    setReviews({ visible: true, items: [], loading: true, error: "" });
+    try {
+      const items = await api.testimonials();
+      setReviews({ visible: true, items, loading: false, error: "" });
+    } catch (e) {
+      setReviews({ visible: true, items: [], loading: false, error: e.message + " — you can retry." });
+    }
+  };
 
   const onRegister = async () => {
     try {
@@ -147,7 +176,7 @@ export default function App() {
           </View>
         )}
         <TitleCard c={comp} />
-        <JudgeCard c={comp} onPlay={() => Alert.alert("Intro Video", "Demo: video playback not bundled. URL comes from backend judge.introVideoUrl.")} />
+        <JudgeCard c={comp} onPlay={() => openVideo("Judge Intro", comp.judge.introVideoUrl)} />
         {comp.state === "registration_open" && (
           <CountdownBar ms={comp.countdown.registrationClosesInMs} onExpiry={load} />
         )}
@@ -155,7 +184,7 @@ export default function App() {
           <View style={st.notice}><Text style={st.noticeT}>{stateMessage(comp.state)}</Text></View>
         )}
         <DatesGrid c={comp} />
-        <WinnersRow c={comp} />
+        <WinnersRow c={comp} onPlay={(w) => openVideo(w.name, w.videoUrl)} />
         <InfoTabs c={comp} />
         <Rewards c={comp} />
         <View style={st.disclaimer}><Text style={st.muted}>ⓘ  <Text style={{ fontWeight: "700" }}>Disclaimer:</Text> Only contributions from paid participants will be considered for judging.</Text></View>
@@ -178,16 +207,33 @@ export default function App() {
           </View>
         )}
         <ReferCard
-          link={(comp.referral && comp.referral.link) || "https://feedants.com/r/"}
+          link={referralLink()}
           code={referral ? referral.code : comp.referralCode}
           perSignup={(comp.referral && comp.referral.perSignupReward) || 10}
           signupCount={referral ? referral.signupCount : null}
           creditEarned={referral ? referral.creditEarned : null}
+          onRefer={shareReferral}
+          onShare={shareReferral}
         />
-        <HearFromUsers />
+        <HearFromUsers onPress={openReviews} />
         <View style={st.ad}><Text style={st.muted}>📢  Ad Here</Text></View>
         <View style={{ height: 130 }} />
       </ScrollView>
+
+      <VideoModal
+        visible={!!video}
+        title={video ? video.title : ""}
+        url={video ? video.url : ""}
+        onClose={() => setVideo(null)}
+      />
+      <TestimonialsModal
+        visible={reviews.visible}
+        items={reviews.items}
+        loading={reviews.loading}
+        error={reviews.error}
+        onRetry={openReviews}
+        onClose={() => setReviews((r) => ({ ...r, visible: false }))}
+      />
 
       <View style={st.footer}>
         <TouchableOpacity style={[st.cta, ctaDisabled && st.ctaOff]} disabled={ctaDisabled} onPress={cta.onPress || undefined}>

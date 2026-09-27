@@ -197,3 +197,31 @@ describe("referral + payment mock", () => {
     assert.equal(r.body.data.demo, true);
   });
 });
+
+describe("testimonials", () => {
+  it("lists seeded demo testimonials, 404 on unknown slug, [] when none", async () => {
+    const Testimonial = require("../src/models/Testimonial");
+    const c = await makeComp({});
+    await Testimonial.create([
+      { competition: c._id, name: "Demo A", text: "Great event!", rating: 5, isDemo: true },
+      { competition: c._id, name: "Demo B", text: "Well organised.", rating: 4, isDemo: true },
+    ]);
+    const ok = await request(app).get(`/api/competitions/${c._id}/testimonials`);
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.data.length, 2);
+    assert.ok(ok.body.data[0].isDemo);
+    const missing = await request(app).get("/api/competitions/does-not-exist/testimonials");
+    assert.equal(missing.status, 404);
+    const empty = await makeComp({});
+    const r = await request(app).get(`/api/competitions/${empty._id}/testimonials`);
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.body.data, []);
+  });
+  it("rejects invalid testimonial input at model level", async () => {
+    const Testimonial = require("../src/models/Testimonial");
+    const c = await makeComp({});
+    await assert.rejects(
+      Testimonial.create({ competition: c._id, name: "x".repeat(200), text: "ok" })
+    );
+  });
+});

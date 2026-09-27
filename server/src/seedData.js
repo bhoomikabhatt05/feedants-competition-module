@@ -19,13 +19,15 @@ function base() {
       bio: "Professional Kathak Dancer",
       experience: "12+ Years of Experience",
       avatarUrl: "https://i.pravatar.cc/200?img=47",
-      introVideoUrl: "https://example.com/intro.mp4",
+      // Demo stand-in video (public sample file) — the real judge video URL goes here.
+      introVideoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     },
     previousWinners: [
-      { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=32", videoUrl: "https://example.com/w1.mp4" },
-      { name: "Aarav Mehta", rankLabel: "1st Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=12", videoUrl: "https://example.com/w2.mp4" },
-      { name: "Neha Verma", rankLabel: "2nd Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=45", videoUrl: "https://example.com/w3.mp4" },
-      { name: "Ishita Chou", rankLabel: "3rd Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=26", videoUrl: "https://example.com/w4.mp4" },
+      // Demo stand-in videos (public sample files) — real performance URLs go here.
+      { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=32", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
+      { name: "Aarav Mehta", rankLabel: "1st Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=12", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
+      { name: "Neha Verma", rankLabel: "2nd Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=45", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
+      { name: "Ishita Chou", rankLabel: "3rd Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=26", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" },
     ],
     about: "This is an online classical dance competition open for all age groups. Participate from anywhere and showcase your talent.",
     aboutMore: " Express your passion through traditional dance. Record a 2–5 min classical performance, upload it during the submission window, and get judged by experts.",
@@ -108,6 +110,14 @@ function stateDemoDocs() {
   ];
 }
 
+function testimonialSeeds(competitionId) {
+  return [
+    { competition: competitionId, name: "Priya S. (demo)", text: "The registration took a minute and my submission went through without any trouble.", rating: 5, isDemo: true },
+    { competition: competitionId, name: "Rahul V. (demo)", text: "Clear dates and quick judging updates. Good experience for a first competition.", rating: 4, isDemo: true },
+    { competition: competitionId, name: "Anita K. (demo)", text: "Loved the referral discount and the practice schedule reminders.", rating: 5, isDemo: true },
+  ];
+}
+
 async function ensureSeeded(Competition) {
   const n = await Competition.countDocuments({ slug: "feedants-classical-dance" });
   if (n === 0) {
@@ -118,6 +128,22 @@ async function ensureSeeded(Competition) {
     const exists = await Competition.countDocuments({ slug: doc.slug });
     if (!exists) await Competition.create(doc);
   }
+  // Demo/sample testimonials for the flagship competition (clearly marked isDemo).
+  const Testimonial = require("./models/Testimonial");
+  const flagship = await Competition.findOne({ slug: "feedants-classical-dance" });
+  if (flagship && (await Testimonial.countDocuments({ competition: flagship._id })) === 0) {
+    await Testimonial.insertMany(testimonialSeeds(flagship._id));
+    console.log("[db] seeded demo testimonials");
+  }
+  // Refresh placeholder/unplayable video URLs from earlier seeds to verified demo samples.
+  const currentIntro = flagship ? (flagship.judge.introVideoUrl || "") : "";
+  if (flagship && (currentIntro.includes("example.com") || currentIntro.includes("googleapis.com"))) {
+    const fresh = seedDoc();
+    flagship.judge.introVideoUrl = fresh.judge.introVideoUrl;
+    flagship.previousWinners = fresh.previousWinners;
+    await flagship.save();
+    console.log("[db] refreshed demo video URLs");
+  }
 }
 
-module.exports = { seedDoc, stateDemoDocs, ensureSeeded };
+module.exports = { seedDoc, stateDemoDocs, testimonialSeeds, ensureSeeded };
