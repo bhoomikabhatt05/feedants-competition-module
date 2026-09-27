@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "primaryColor": "#0e7482",
-    "web": { "bundler": "metro" }
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
   }
 }
