@@ -1,25 +1,42 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, Modal, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, Modal, ActivityIndicator, Image } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { useEventListener } from "expo";
 import { formatMs, useCountdown, formatDateTime } from "../hooks";
 
 export const TEAL = "#0e7482";
 export const INK = "#0b2b33";
 export const MUTED = "#6b8a91";
 
-export function TopBar({ lang, setLang }) {
+export function TopBar({ lang, setLang, t, onBack }) {
   return (
     <View style={s.topRow}>
-      <Text style={s.back}>←  {lang === "हिंदी" ? "वापस जाएं" : "Go back"}</Text>
+      <TouchableOpacity onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" style={s.backBtn}>
+        <Text style={s.back}>←  {t("back")}</Text>
+      </TouchableOpacity>
       <View style={s.langWrap}>
         {["ENG", "हिंदी"].map((l) => (
-          <TouchableOpacity key={l} onPress={() => setLang(l)} style={[s.lang, lang === l && s.langOn]}>
+          <TouchableOpacity key={l} onPress={() => setLang(l)} accessibilityRole="button" accessibilityLabel={l} style={[s.lang, lang === l && s.langOn]}>
             <Text style={[s.langT, lang === l && s.langTOn]}>{l}</Text>
           </TouchableOpacity>
         ))}
       </View>
     </View>
+  );
+}
+
+export function CoverPhoto({ uri, title }) {
+  const [failed, setFailed] = useState(false);
+  if (!uri || failed) {
+    return (
+      <View style={[s.cover, s.coverFallback]}>
+        <Text style={s.coverFallbackT}>🎭  {title}</Text>
+      </View>
+    );
+  }
+  return (
+    <Image source={{ uri }} style={s.cover} resizeMode="cover" onError={() => setFailed(true)} accessibilityLabel="Competition cover" />
   );
 }
 
@@ -51,10 +68,15 @@ export function TitleCard({ c }) {
 }
 
 export function JudgeCard({ c, onPlay }) {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <View style={s.card}>
       <View style={s.row}>
-        <View style={s.avatar}><Text style={{ fontSize: 28 }}>👩🏽</Text></View>
+        {c.judge.avatarUrl && !imgFailed ? (
+          <Image source={{ uri: c.judge.avatarUrl }} style={s.avatarImg} onError={() => setImgFailed(true)} />
+        ) : (
+          <View style={s.avatar}><Text style={{ fontSize: 28 }}>👩🏽</Text></View>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={s.lbl}>Judge</Text>
           <Text style={s.judgeName}>{c.judge.name}</Text>
@@ -84,7 +106,7 @@ export function CountdownBar({ ms, onExpiry }) {
   );
 }
 
-export function DatesGrid({ c }) {
+export function DatesGrid({ c, t }) {
   const cells = [
     ["Register Before", c.dates.registerBefore],
     ["Submission Starts", c.dates.submissionStarts],
@@ -93,7 +115,7 @@ export function DatesGrid({ c }) {
   ];
   return (
     <View style={s.card}>
-      <Text style={s.secT}>Important Dates</Text>
+      <Text style={s.secT}>{t("importantDates")}</Text>
       <View style={s.grid}>
         {cells.map(([label, iso]) => {
           const { date, time } = formatDateTime(iso);
@@ -110,40 +132,58 @@ export function DatesGrid({ c }) {
   );
 }
 
-export function WinnersRow({ c, onPlay }) {
+export function WinnersRow({ c, t, onPlay }) {
   return (
     <View style={s.card}>
-      <Text style={s.secT}>Previous Winners</Text>
+      <Text style={s.secT}>{t("previousWinners")}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {(c.previousWinners || []).length === 0 && (
           <Text style={s.muted}>Winners will be announced after results.</Text>
         )}
         {(c.previousWinners || []).map((w, i) => (
-          <View key={i} style={s.win}>
-            <TouchableOpacity style={s.thumb} onPress={() => onPlay && onPlay(w)}>
-              <View style={s.winPlay}><Text style={{ color: "#fff", fontSize: 10 }}>▶</Text></View>
-            </TouchableOpacity>
-            <Text style={s.winN}>{w.name}</Text>
-            <Text style={s.winR}>{w.rankLabel}</Text>
-          </View>
+          <WinnerThumb key={i} w={w} onPlay={onPlay} />
         ))}
       </ScrollView>
     </View>
   );
 }
 
-export function InfoTabs({ c }) {
+function WinnerThumb({ w, onPlay }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <View style={s.win}>
+      <TouchableOpacity
+        style={s.thumbBtn}
+        onPress={() => onPlay && onPlay(w)}
+        accessibilityRole="button"
+        accessibilityLabel={`Play video by ${w.name}`}
+      >
+        {w.thumbnailUrl && !failed ? (
+          <Image source={{ uri: w.thumbnailUrl }} style={s.thumb} resizeMode="cover" onError={() => setFailed(true)} />
+        ) : (
+          <View style={[s.thumb, s.thumbFallback]} />
+        )}
+        <View style={s.winPlay}><Text style={{ color: "#fff", fontSize: 10 }}>▶</Text></View>
+      </TouchableOpacity>
+      <Text style={s.winN} numberOfLines={1}>{w.name}</Text>
+      <Text style={s.winR}>{w.rankLabel}</Text>
+    </View>
+  );
+}
+
+export function InfoTabs({ c, t }) {
   const [tab, setTab] = useState("about");
   const [more, setMore] = useState(false);
+  const tabs = [["about", t("about")], ["judge", t("judging")], ["rules", t("rules")]];
   return (
     <View style={s.card}>
-      <View style={s.tabs}>
-        {[["about", "About Competition"], ["judge", "Judging Parameters"], ["rules", "Rules & Eligibility"]].map(([k, l]) => (
-          <TouchableOpacity key={k} onPress={() => setTab(k)}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
+        {tabs.map(([k, l]) => (
+          <TouchableOpacity key={k} onPress={() => setTab(k)} accessibilityRole="tab" accessibilityState={{ selected: tab === k }}>
             <Text style={[s.tab, tab === k && s.tabOn]}>{l}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
       {tab === "about" && (
         <Text style={s.muted}>{c.about}{more ? c.aboutMore : ""}{" "}
           <Text style={s.link} onPress={() => setMore(!more)}>{more ? "View less ▲" : "View more ▼"}</Text>
@@ -155,10 +195,10 @@ export function InfoTabs({ c }) {
   );
 }
 
-export function Rewards({ c }) {
+export function Rewards({ c, t }) {
   return (
     <View style={s.card}>
-      <Text style={s.secT}>Rewards <Text style={s.muted}>(All Positions)</Text></Text>
+      <Text style={s.secT}>{t("rewards")} <Text style={s.muted}>(All Positions)</Text></Text>
       {(c.rewards || []).map((r) => (
         <View key={r.position} style={s.rwRow}>
           <Text>🏆  {r.label}</Text>
@@ -169,13 +209,13 @@ export function Rewards({ c }) {
   );
 }
 
-export function PrizeMoneyCard() {
+export function PrizeMoneyCard({ onPrizeVideo }) {
   return (
     <View style={s.row2}>
-      <View style={[s.card, { flex: 1 }]}>
+      <TouchableOpacity style={[s.card, { flex: 1 }]} onPress={onPrizeVideo} accessibilityRole="button" accessibilityLabel="How you will receive prize money">
         <Text style={s.secT}>▶  How will you receive prize money?</Text>
         <Text style={s.muted}>Watch video to know more</Text>
-      </View>
+      </TouchableOpacity>
       <View style={[s.card, { flex: 1 }]}>
         <Text style={s.secT}>🛡 Refund policy</Text>
         <Text style={s.muted}>🛡 Secure payments powered by</Text>
@@ -186,7 +226,7 @@ export function PrizeMoneyCard() {
   );
 }
 
-export function ReferCard({ link, code, perSignup, signupCount, creditEarned, onRefer, onShare }) {
+export function ReferCard({ link, code, perSignup, signupCount, creditEarned, onRefer, onShare, t }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState("");
   const copy = async () => {
@@ -207,7 +247,7 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned, on
   };
   return (
     <View style={[s.card, { backgroundColor: "#e7f6ec" }]}>
-      <Text style={s.secT}>📢 Refer & Earn more discount</Text>
+      <Text style={s.secT}>📢 {t("referTitle")}</Text>
       <Text style={s.linkBox} numberOfLines={1}>{link}</Text>
       {!!code && <Text style={s.muted}>Your backend code: <Text style={{ fontWeight: "800", color: INK }}>{code}</Text></Text>}
       {!!copyError && <Text style={s.copyErr}>{copyError}</Text>}
@@ -230,13 +270,13 @@ export function ReferCard({ link, code, perSignup, signupCount, creditEarned, on
   );
 }
 
-export function HearFromUsers({ onPress }) {
+export function HearFromUsers({ onPress, t }) {
   return (
-    <TouchableOpacity style={s.card} onPress={onPress}>
+    <TouchableOpacity style={s.card} onPress={onPress} accessibilityRole="button" accessibilityLabel={t("hearTitle")}>
       <View style={s.rowBetween}>
         <View>
-          <Text style={s.secT}>💬 Hear From Our Users</Text>
-          <Text style={s.muted}>See what participants say about Feedants</Text>
+          <Text style={s.secT}>💬 {t("hearTitle")}</Text>
+          <Text style={s.muted}>{t("hearSub")}</Text>
         </View>
         <Text style={{ fontSize: 18 }}>›</Text>
       </View>
@@ -246,28 +286,46 @@ export function HearFromUsers({ onPress }) {
 
 function PlayerView({ url }) {
   const [playing, setPlaying] = useState(false);
-  const player = useVideoPlayer(url, (p) => {
+  const [status, setStatus] = useState("loading");
+  const [attempt, setAttempt] = useState(0);
+  const player = useVideoPlayer({ uri: url }, (p) => {
     p.play();
-    setPlaying(true);
   });
+  useEventListener(player, "playingChange", (e) => setPlaying(!!e.isPlaying));
+  useEventListener(player, "statusChange", (e) => setStatus(e.status || "readyToPlay"));
   const toggle = () => {
-    if (playing) {
-      player.pause();
-      setPlaying(false);
-    } else {
-      player.play();
-      setPlaying(true);
-    }
+    if (playing) player.pause();
+    else player.play();
   };
+  if (status === "error") {
+    return (
+      <View style={s.centerBox}>
+        <Text style={s.copyErr}>Video failed to load. Check your connection and retry.</Text>
+        <TouchableOpacity
+          style={s.retryBtn}
+          onPress={() => { setStatus("loading"); setAttempt((a) => a + 1); }}
+        >
+          <Text style={s.retryT}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   return (
-    <View>
-      <VideoView style={s.video} player={player} nativeControls contentFit="contain" allowsPictureInPicture />
+    <View key={attempt}>
+      <View>
+        <VideoView style={s.video} player={player} nativeControls contentFit="contain" allowsPictureInPicture />
+        {status !== "readyToPlay" && (
+          <View style={s.videoLoading}>
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
+      </View>
       <View style={s.videoBtns}>
-        <TouchableOpacity style={s.playToggle} onPress={toggle}>
+        <TouchableOpacity style={s.playToggle} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? "Pause video" : "Play video"}>
           <Text style={s.playToggleT}>{playing ? "❚❚  Pause" : "▶  Play"}</Text>
         </TouchableOpacity>
       </View>
-      <Text style={s.muted}>Demo sample video — the real performance video URL comes from the backend.</Text>
+      <Text style={s.muted}>Demo sample video — the real video URL comes from the backend.</Text>
     </View>
   );
 }
@@ -335,6 +393,88 @@ export function TestimonialsModal({ visible, items, loading, error, onRetry, onC
   );
 }
 
+export function AdSlot() {
+  return (
+    <View style={s.adSlot}>
+      <Text style={s.adSlotT}>Advertisement</Text>
+      <Text style={s.adSlotS}>Demo Ad Placement — reserved for sponsors</Text>
+    </View>
+  );
+}
+
+const NAV_ITEMS = [
+  { key: "home", icon: "⌂", label: "Home" },
+  { key: "explore", icon: "🔍", label: "Explore" },
+  { key: "action", icon: "⊕", label: "Join" },
+  { key: "competitions", icon: "🏆", label: "Competitions" },
+  { key: "profile", icon: "👤", label: "Profile" },
+];
+
+export function BottomNav({ active, onGo }) {
+  return (
+    <View style={s.navBar}>
+      {NAV_ITEMS.map((n) => {
+        const on = active === n.key;
+        return (
+          <TouchableOpacity
+            key={n.key}
+            style={s.navItem}
+            onPress={() => onGo(n.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={n.label}
+          >
+            <Text style={[s.navIcon, on && s.navOn]}>{n.icon}</Text>
+            <Text style={[s.navT, on && s.navOn]}>{n.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function stateBadge(state) {
+  switch (state) {
+    case "registration_open": return "Open";
+    case "full": return "Full";
+    case "registration_closed": return "Closed";
+    case "submission_open": return "Submitting";
+    case "submission_closed": return "Judging";
+    case "result_declared": return "Results";
+    default: return state;
+  }
+}
+
+export function CompetitionCard({ item, onOpen }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <TouchableOpacity
+      style={s.compCard}
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${item.title}`}
+    >
+      {item.coverImage && !failed ? (
+        <Image source={{ uri: item.coverImage }} style={s.compCover} resizeMode="cover" onError={() => setFailed(true)} />
+      ) : (
+        <View style={[s.compCover, s.coverFallback]}><Text style={s.coverFallbackT}>🎭</Text></View>
+      )}
+      <View style={s.compBody}>
+        <View style={s.rowBetween}>
+          <Text style={s.compTitle} numberOfLines={1}>{item.title}</Text>
+          <View style={s.stateBadge}><Text style={s.stateBadgeT}>{stateBadge(item.state)}</Text></View>
+        </View>
+        <Text style={s.muted}>{item.category} • {item.format}</Text>
+        <View style={s.compStats}>
+          <Text style={s.compPrize}>₹ {Number(item.prizePool).toLocaleString("en-IN")}</Text>
+          <Text style={s.muted}>₹{item.entryFee} entry</Text>
+          <Text style={s.spots}>{item.spotsLeft} left</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 const s = StyleSheet.create({
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   back: { fontSize: 16, fontWeight: "700", color: INK },
@@ -377,8 +517,10 @@ const s = StyleSheet.create({
   cell: { width: "50%", paddingVertical: 8 },
   cellD: { color: TEAL, fontWeight: "700" },
   win: { width: 110, marginRight: 12 },
-  thumb: { width: 100, height: 80, borderRadius: 10, backgroundColor: "#c96f2e", alignItems: "center", justifyContent: "center" },
-  winPlay: { width: 28, height: 28, borderRadius: 14, backgroundColor: TEAL, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" },
+  thumb: { width: 100, height: 80, borderRadius: 10, backgroundColor: "#dfe9ea" },
+  thumbBtn: { borderRadius: 10 },
+  thumbFallback: { backgroundColor: "#dfe9ea", alignItems: "center", justifyContent: "center" },
+  winPlay: { position: "absolute", alignSelf: "center", top: 26, width: 28, height: 28, borderRadius: 14, backgroundColor: TEAL, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" },
   winN: { fontWeight: "700", color: INK, fontSize: 12, marginTop: 4 },
   winR: { color: TEAL, fontSize: 11 },
   tabs: { flexDirection: "row", marginBottom: 8, gap: 4 },
@@ -411,4 +553,25 @@ const s = StyleSheet.create({
   quote: { borderBottomWidth: 1, borderColor: "#f0f4f4", paddingVertical: 10 },
   stars: { color: "#e8a100", fontWeight: "700", marginBottom: 2 },
   quoteT: { color: INK, marginBottom: 4 },
+  cover: { width: "100%", height: 168, borderRadius: 12, marginBottom: 12, backgroundColor: "#dfe9ea" },
+  coverFallback: { backgroundColor: "#0e7482", alignItems: "center", justifyContent: "center" },
+  coverFallbackT: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  avatarImg: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#f3e2d3" },
+  adSlot: { backgroundColor: "#f1f5f6", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginBottom: 12 },
+  adSlotT: { color: MUTED, fontWeight: "700", fontSize: 12 },
+  adSlotS: { color: MUTED, fontSize: 11 },
+  navBar: { flexDirection: "row", borderTopWidth: 1, borderColor: "#e6efef", backgroundColor: "#fff", paddingBottom: 18, paddingTop: 6 },
+  navItem: { flex: 1, alignItems: "center", paddingVertical: 4 },
+  navIcon: { fontSize: 20, color: MUTED },
+  navT: { color: MUTED, fontWeight: "600", fontSize: 11 },
+  navOn: { color: TEAL, fontWeight: "800" },
+  compCard: { backgroundColor: "#fff", borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: "#e6efef", overflow: "hidden" },
+  compCover: { width: "100%", height: 130, backgroundColor: "#dfe9ea" },
+  compBody: { padding: 12 },
+  compTitle: { fontSize: 16, fontWeight: "800", color: INK, flex: 1 },
+  stateBadge: { backgroundColor: "#e8f4f5", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 8 },
+  stateBadgeT: { color: TEAL, fontWeight: "700", fontSize: 11 },
+  compStats: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 },
+  compPrize: { color: TEAL, fontWeight: "800", fontSize: 16 },
+  backBtn: { paddingVertical: 4, paddingRight: 12 },
 });

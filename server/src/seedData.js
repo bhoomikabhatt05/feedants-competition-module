@@ -9,6 +9,9 @@ function base() {
     category: "Dance",
     format: "Multi-Win",
     certificateNote: "Winners get certificate",
+    // Demo stand-in cover (public sample photo) — the real competition banner goes here.
+    coverImage: "https://picsum.photos/seed/feedants-cover/800/400",
+    prizeVideoUrl: "",
     prizePool: 1500,
     entryFee: 99,
     capacity: 20,
@@ -23,11 +26,11 @@ function base() {
       introVideoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     },
     previousWinners: [
-      // Demo stand-in videos (public sample files) — real performance URLs go here.
-      { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=32", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
-      { name: "Aarav Mehta", rankLabel: "1st Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=12", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
-      { name: "Neha Verma", rankLabel: "2nd Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=45", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
-      { name: "Ishita Chou", rankLabel: "3rd Winner", thumbnailUrl: "https://i.pravatar.cc/200?img=26", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" },
+      // Demo stand-in photos/videos (public samples) — real media URLs go here.
+      { name: "Riya Shah", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/winner-riya/200/160", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4" },
+      { name: "Aarav Mehta", rankLabel: "1st Winner", thumbnailUrl: "https://picsum.photos/seed/winner-aarav/200/160", videoUrl: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4" },
+      { name: "Neha Verma", rankLabel: "2nd Winner", thumbnailUrl: "https://picsum.photos/seed/winner-neha/200/160", videoUrl: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4" },
+      { name: "Ishita Chou", rankLabel: "3rd Winner", thumbnailUrl: "https://picsum.photos/seed/winner-ishita/200/160", videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4" },
     ],
     about: "This is an online classical dance competition open for all age groups. Participate from anywhere and showcase your talent.",
     aboutMore: " Express your passion through traditional dance. Record a 2–5 min classical performance, upload it during the submission window, and get judged by experts.",
@@ -62,6 +65,8 @@ function seedDoc() {
   return {
     ...base(),
     slug: "feedants-classical-dance",
+    coverImage: "https://picsum.photos/seed/feedants-classical-cover/800/400",
+    prizeVideoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_2MB.mp4",
     dates: {
       // Registration closes ~1d 6h from now so the countdown is always alive
       registerBefore: new Date(now + ((26 * 60 + 28) * 60 + 32) * 1000 + 1 * D),
@@ -135,14 +140,16 @@ async function ensureSeeded(Competition) {
     await Testimonial.insertMany(testimonialSeeds(flagship._id));
     console.log("[db] seeded demo testimonials");
   }
-  // Refresh placeholder/unplayable video URLs from earlier seeds to verified demo samples.
+  // Refresh placeholder/unplayable media from earlier seeds to verified demo samples.
   const currentIntro = flagship ? (flagship.judge.introVideoUrl || "") : "";
   if (flagship && (currentIntro.includes("example.com") || currentIntro.includes("googleapis.com"))) {
     const fresh = seedDoc();
     flagship.judge.introVideoUrl = fresh.judge.introVideoUrl;
     flagship.previousWinners = fresh.previousWinners;
+    flagship.coverImage = fresh.coverImage;
+    flagship.prizeVideoUrl = fresh.prizeVideoUrl;
     await flagship.save();
-    console.log("[db] refreshed demo video URLs");
+    console.log("[db] refreshed demo media URLs");
   }
 }
 

@@ -42,6 +42,8 @@ function toCompetitionDTO(comp, registration, extra = {}) {
     id: comp._id,
     slug: comp.slug,
     title: comp.title,
+    coverImage: comp.coverImage || "",
+    prizeVideoUrl: comp.prizeVideoUrl || "",
     category: comp.category,
     format: comp.format,
     certificateNote: comp.certificateNote,

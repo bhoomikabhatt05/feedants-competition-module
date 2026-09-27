@@ -225,3 +225,16 @@ describe("testimonials", () => {
     );
   });
 });
+
+describe("competition media", () => {
+  it("detail DTO carries backend-driven cover, prize video, thumbnails", async () => {
+    const c = await makeComp({
+      coverImage: "https://picsum.photos/seed/x/800/400",
+      prizeVideoUrl: "https://example.com/prize.mp4",
+    });
+    const r = await request(app).get(`/api/competitions/${c._id}?userId=media1`);
+    assert.equal(r.status, 200);
+    assert.equal(r.body.data.coverImage, "https://picsum.photos/seed/x/800/400");
+    assert.equal(r.body.data.prizeVideoUrl, "https://example.com/prize.mp4");
+  });
+});

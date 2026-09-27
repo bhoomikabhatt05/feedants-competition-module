@@ -11,6 +11,8 @@ const CompetitionSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, index: true },
     title: { type: String, required: true },
+    coverImage: { type: String, default: "" },
+    prizeVideoUrl: { type: String, default: "" },
     category: { type: String, default: "Dance" },
     format: { type: String, default: "Multi-Win" },
     certificateNote: { type: String, default: "Winners get certificate" },

@@ -52,15 +52,18 @@ server/src/
   models/Competition.js  competition + dates + rewards + referral config
   models/Registration.js participation + payment + submission state
   models/Referral.js     backend-issued codes + earned credit
-  routes/competitions.js detail / register / cancel / submit / referral
+  models/Testimonial.js  demo/sample reviews
+  routes/competitions.js detail / register / cancel / submit / referral / testimonials
   routes/payments.js     DEMO/MOCK checkout (backend-owned)
   utils/lifecycle.js     state derivation + DTO
-  seedData.js / seed.js  flagship competition + per-state demos
-server/test/api.test.js  12 tests (lifecycle, concurrency, validation, referral, payments)
+  seedData.js / seed.js  flagship competition + per-state demos + demo media/testimonials
+server/test/api.test.js  15 tests (lifecycle, concurrency, validation, referral, payments, testimonials, media)
 mobile/
-  App.js                 screen state machine (loading|error|content), flows
+  App.js                 nav-stack shell (home/explore/competitions/details/profile) + details flows
   src/api.js             API client, demo device id, stale-labelled cache — NO business data
   src/hooks.js           countdown (server-based, expiry refresh), date formatting
+  src/i18n.js            minimal ENG/हिंदी UI-label dictionary (data stays backend-driven)
+  src/screens.js         Home / Explore / Competitions / Profile (all backend-driven)
   src/components/cards.js reusable section components (props-only, no hardcoded data)
 ```
 
@@ -136,8 +139,25 @@ EXPO_PUBLIC_API_URL=http://<your-lan-ip>:4000 npx expo start
 2. Start the backend: `cd server && npm run dev` (listens on `:4000`, reachable at `http://<lan-ip>:4000`).
 3. Start Expo with the phone-reachable URL: `EXPO_PUBLIC_API_URL=http://<lan-ip>:4000 npx expo start --clear`.
 4. Scan the QR in Expo Go. Never use `localhost` for a physical device; never hardcode the LAN IP
-   into source — it stays in the `EXPO_PUBLIC_API_URL` env var only. A "Cannot connect to Expo CLI"
-   dev-menu warning is harmless tooling noise as long as the app and API work.
+   into source — it stays in the `EXPO_PUBLIC_API_URL` env var only.
+5. If LAN fails (AP isolation / firewall / different band), use tunnel mode instead:
+   `npx expo start --tunnel` (slower, but bypasses local-network restrictions).
+
+## Expo troubleshooting (honest notes)
+
+- "Cannot connect to Expo CLI" on the phone is a Metro/tooling-reachability warning, not an app bug:
+  verify the phone and Mac share the same Wi-Fi, the Mac firewall allows Node, and the QR encodes the
+  current LAN IP (stale QRs from an old IP are the most common cause — restart with `--clear`).
+- `Unable to run simctl … code 72` is an iOS-simulator-only message on Macs without full Xcode;
+  it does not affect Android Expo Go.
+- The floating gear/toast some builds show is the Expo development overlay, not app UI.
+
+## Manual device testing checklist
+
+Launch → competition loads → countdown ticks → dates render → tabs switch (About/Judging/Rules) →
+judge intro plays → winner videos play → Register (DEMO) → spots decrement → duplicate rejected →
+submission accepted → invalid rejected → Copy/Share/Refer Now → testimonials open/close →
+Home/Explore/Competitions/Profile navigate → hardware back pops → language toggle responds.
 
 ## API Endpoints
 
@@ -218,10 +238,13 @@ Abuse note: one credit per referred registration; rate limits apply.
 ## Testing
 
 ```bash
-cd server && npm test        # 12 tests: health, detail, 404, 401, 6 lifecycle states,
+cd server && npm test        # 15 tests: health, detail, 404, 401, 6 lifecycle states,
                              # duplicate-409, oversell (3×10), same-user (1×10), closed/full codes,
-                             # submission 403/400/200, referral credit rule, mock-payment flag
-cd mobile && npx expo export --platform web   # Metro web bundle must build cleanly
+                             # submission 403/400/200, referral credit rule, mock-payment flag,
+                             # testimonials list/404/validation, competition media fields
+cd mobile && npx expo-doctor                       # 21/21
+cd mobile && npx expo export --platform web        # Metro web bundle must build cleanly
+cd mobile && npx expo export --platform android    # Android bundle must build cleanly
 ```
 
 ## Assumptions

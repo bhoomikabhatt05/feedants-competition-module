@@ -4,17 +4,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  * All competition/business data (title, prize, fee, spots, judge, dates,
  * winners, rewards, registration/lifecycle state) comes from the backend.
  * This module holds NO hardcoded competition values — only UI labels.
- * The last successful server response is cached for offline display and is
- * always labelled stale; it is never a substitute for live data.
+ * The last successful server response per competition is cached for offline
+ * display and is always labelled stale; it is never a substitute for live data.
  */
 
-// Change via EXPO_PUBLIC_API_URL (e.g. http://<your-lan-ip>:4000)
+// Change via EXPO_PUBLIC_API_URL (e.g. http://<your-lan-ip>:4000).
+// Default localhost works for simulators/web; a physical device needs the LAN URL.
 export const API_URL =
   (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) ||
   "http://localhost:4000";
 export const SLUG = "feedants-classical-dance";
 
-const CACHE_KEY = `feedants_cache_${SLUG}`;
+const cacheKey = (slug) => `feedants_cache_${slug}`;
 
 export class ApiError extends Error {
   constructor(message, status, code) {
@@ -34,18 +35,18 @@ export async function getUserId() {
   return id;
 }
 
-export async function readCache() {
+export async function readCache(slug) {
   try {
-    const raw = await AsyncStorage.getItem(CACHE_KEY);
+    const raw = await AsyncStorage.getItem(cacheKey(slug || SLUG));
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-async function writeCache(data) {
+async function writeCache(slug, data) {
   try {
-    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ data, at: Date.now() }));
+    await AsyncStorage.setItem(cacheKey(slug), JSON.stringify({ data, at: Date.now() }));
   } catch {}
 }
 
@@ -70,25 +71,26 @@ async function req(path, opts = {}) {
 }
 
 export const api = {
-  async detail(userId) {
-    const data = await req(`/api/competitions/${SLUG}?userId=${encodeURIComponent(userId)}`);
-    await writeCache(data);
+  list: () => req(`/api/competitions`),
+  async detail(slug, userId) {
+    const data = await req(`/api/competitions/${slug}?userId=${encodeURIComponent(userId)}`);
+    await writeCache(slug, data);
     return data;
   },
-  register: (userId, referralCode) =>
-    req(`/api/competitions/${SLUG}/register`, {
+  register: (slug, userId, referralCode) =>
+    req(`/api/competitions/${slug}/register`, {
       method: "POST",
-      body: JSON.stringify({ userId, idempotencyKey: `${userId}-${SLUG}`, referralCode: referralCode || undefined }),
+      body: JSON.stringify({ userId, idempotencyKey: `${userId}-${slug}`, referralCode: referralCode || undefined }),
     }),
-  cancel: (userId) =>
-    req(`/api/competitions/${SLUG}/cancel`, { method: "POST", body: JSON.stringify({ userId }) }),
-  submit: (userId, submissionUrl, fileType, fileSizeBytes) =>
-    req(`/api/competitions/${SLUG}/submit`, {
+  cancel: (slug, userId) =>
+    req(`/api/competitions/${slug}/cancel`, { method: "POST", body: JSON.stringify({ userId }) }),
+  submit: (slug, userId, submissionUrl, fileType, fileSizeBytes) =>
+    req(`/api/competitions/${slug}/submit`, {
       method: "POST",
       body: JSON.stringify({ userId, submissionUrl, fileType, fileSizeBytes }),
     }),
-  referral: (userId) => req(`/api/competitions/${SLUG}/referral?userId=${encodeURIComponent(userId)}`),
-  testimonials: () => req(`/api/competitions/${SLUG}/testimonials`),
+  referral: (slug, userId) => req(`/api/competitions/${slug}/referral?userId=${encodeURIComponent(userId)}`),
+  testimonials: (slug) => req(`/api/competitions/${slug}/testimonials`),
   mockCheckout: (userId, amount) =>
     req(`/api/payments/mock-checkout`, {
       method: "POST",
