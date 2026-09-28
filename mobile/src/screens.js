@@ -25,13 +25,13 @@ function ScreenState({ loading, error, empty, onRetry, loadingText, children }) 
   }
   if (empty) {
     return (
-      <View style={st.center}>
+      <View style={st.emptyState}>
         <Text style={st.errT}>Nothing here yet</Text>
         <Text style={st.muted}>{empty}</Text>
       </View>
     );
   }
-  return children;
+  return <View style={st.listWrap}>{children}</View>;
 }
 
 export function HomeScreen({ t, onOpenCompetition, onGo }) {
@@ -543,6 +543,8 @@ const st = StyleSheet.create({
   sub: { color: MUTED, fontSize: 13, marginBottom: 12 },
   secT: { fontWeight: "800", color: INK, marginVertical: 8 },
   center: { alignItems: "center", padding: 32, gap: 10 },
+  emptyState: { alignItems: "center", paddingTop: 28, paddingBottom: 24, gap: 8 },
+  listWrap: { flexGrow: 0, alignItems: "stretch", justifyContent: "flex-start" },
   muted: { color: MUTED, fontSize: 13 },
   errT: { fontSize: 17, fontWeight: "800", color: INK },
   retry: { backgroundColor: TEAL, borderRadius: 8, paddingHorizontal: 24, paddingVertical: 8 },
