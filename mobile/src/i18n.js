@@ -113,7 +113,7 @@ const STR = {
   noReviews: { en: "No reviews yet — be the first to participate.", hi: "अभी कोई समीक्षा नहीं — पहले भाग लें।" },
   sampleReview: { en: "sample review", hi: "नमूना समीक्षा" },
   // Screens
-  tagline: { en: "Classical dance competitions, judged by experts.", hi: "विशेषज्ञों द्वारा परखी शास्त्रीय नृत्य प्रतियोगिताएं।" },
+  tagline: { en: "Discover competitions. Showcase your talent.", hi: "प्रतियोगिताएं खोजें। अपनी प्रतिभा दिखाएं।" },
   discover: { en: "Discover Your Stage", hi: "अपना मंच खोजें" },
   meetWinners: { en: "Meet the Winners", hi: "विजेताओं से मिलें" },
   howItWorks: { en: "How It Works", hi: "यह कैसे काम करता है" },
