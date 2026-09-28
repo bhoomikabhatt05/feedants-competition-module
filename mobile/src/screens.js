@@ -301,6 +301,7 @@ function partOf(m) {
 }
 
 export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
+  const [items, setItems] = useState([]);
   const [mine, setMine] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -310,7 +311,10 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
     try {
       setError("");
       setLoading(true);
-      setMine(await api.mine(await getUserId()));
+      const userId = await getUserId();
+      const [all, my] = await Promise.all([api.list(), api.mine(userId)]);
+      setItems(all);
+      setMine(my);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -320,7 +324,14 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
 
   useEffect(() => { load(); }, []);
 
-  const shown = mine.filter((m) => filter === "all" || partOf(m) === filter);
+  const partBySlug = {};
+  for (const m of mine) {
+    if (m.competition && m.competition.slug) partBySlug[m.competition.slug] = m;
+  }
+
+  const shown = items
+    .map((c) => ({ c, m: partBySlug[c.slug] || null }))
+    .filter(({ m }) => filter === "all" || (m ? partOf(m) === filter : false));
 
   const chipsRow = { flexDirection: "row", alignItems: "center", paddingVertical: 8, gap: 8 };
   const chip = {
@@ -360,16 +371,23 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
         error={error}
         onRetry={load}
         loadingText={t("loading")}
-        empty={mine.length === 0 ? t("emptyJoin") : shown.length === 0 ? t("noMatch") : ""}
+        empty={items.length === 0 ? t("nonePublished") : shown.length === 0 ? t("noMatch") : ""}
       >
-        {mine.length === 0 ? (
+        {items.length === 0 ? (
           <TouchableOpacity style={st.retry} onPress={onExplore} accessibilityRole="button" accessibilityLabel={t("exploreBtn")}>
             <Text style={st.retryT}>{t("exploreBtn")}</Text>
           </TouchableOpacity>
         ) : (
-          shown.map((m) => {
-            const c = m.competition;
-            const action = m.submittedAt ? t("viewSubmission") : c.canUploadSubmission ? t("continueSubmission") : t("viewCompetition");
+          shown.map(({ c, m }) => {
+            const action = m
+              ? m.submittedAt
+                ? t("viewSubmission")
+                : c.canUploadSubmission
+                  ? t("continueSubmission")
+                  : t("viewCompetition")
+              : c.canRegister
+                ? t("registerNow")
+                : t("viewCompetition");
             return (
               <PartCard key={String(c.id || c.slug)} c={c} t={t} action={action} onOpen={() => onOpenCompetition(c.slug)} />
             );
@@ -577,9 +595,9 @@ const st = StyleSheet.create({
   setRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: "#f0f4f4" },
   setLbl: { color: INK, fontWeight: "600" },
   langWrap: { flexDirection: "row", backgroundColor: "#eef3f4", borderRadius: 16, padding: 2 },
-  lang: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14 },
+  lang: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14, minHeight: 32, lineHeight: 20, alignItems: "center", justifyContent: "center" },
   langOn: { backgroundColor: TEAL },
-  langT: { color: INK, fontWeight: "700" },
+  langT: { color: INK, fontWeight: "700", fontSize: 13, lineHeight: 20 },
   langTOn: { color: "#fff" },
   infoBox: { backgroundColor: "#f6fafa", borderRadius: 8, padding: 10, marginTop: 8 },
   closeInfo: { color: TEAL, fontWeight: "700", marginTop: 6 },
