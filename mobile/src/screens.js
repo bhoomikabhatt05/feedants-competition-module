@@ -351,7 +351,7 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
   const chipTOn = { color: "#fff" };
 
   return (
-    <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
+    <ScrollView contentContainerStyle={st.competitionBody} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <Text style={st.hero}>{t("competitions")}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={chipsRow}>
         {PART_FILTERS.map((f) => (
@@ -366,19 +366,39 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScreenState
-        loading={loading}
-        error={error}
-        onRetry={load}
-        loadingText={t("loading")}
-        empty={items.length === 0 ? t("nonePublished") : shown.length === 0 ? t("noMatch") : ""}
-      >
-        {items.length === 0 ? (
+      {loading && (
+        <View style={st.center}>
+          <ActivityIndicator size="large" color={TEAL} />
+          <Text style={st.muted}>{t("loading")}</Text>
+        </View>
+      )}
+      {error && (
+        <View style={st.center}>
+          <Text style={st.errT}>Couldn't load</Text>
+          <Text style={st.muted}>{error}</Text>
+          <TouchableOpacity style={st.retry} onPress={load}>
+            <Text style={st.retryT}>{t("retry")}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {!loading && !error && items.length === 0 && (
+        <View style={st.emptyState}>
+          <Text style={st.errT}>Nothing here yet</Text>
+          <Text style={st.muted}>{t("nonePublished")}</Text>
           <TouchableOpacity style={st.retry} onPress={onExplore} accessibilityRole="button" accessibilityLabel={t("exploreBtn")}>
             <Text style={st.retryT}>{t("exploreBtn")}</Text>
           </TouchableOpacity>
-        ) : (
-          shown.map(({ c, m }) => {
+        </View>
+      )}
+      {!loading && !error && items.length > 0 && shown.length === 0 && (
+        <View style={st.emptyState}>
+          <Text style={st.errT}>Nothing here yet</Text>
+          <Text style={st.muted}>{t("noMatch")}</Text>
+        </View>
+      )}
+      {!loading && !error && shown.length > 0 && (
+        <View style={st.competitionList}>
+          {shown.map(({ c, m }) => {
             const action = m
               ? m.submittedAt
                 ? t("viewSubmission")
@@ -391,9 +411,9 @@ export function CompetitionsScreen({ t, onOpenCompetition, onExplore }) {
             return (
               <PartCard key={String(c.id || c.slug)} c={c} t={t} action={action} onOpen={() => onOpenCompetition(c.slug)} />
             );
-          })
-        )}
-      </ScreenState>
+          })}
+        </View>
+      )}
       <View style={{ height: 100 }} />
     </ScrollView>
   );
@@ -538,6 +558,8 @@ export function ProfileScreen({ t, lang, setLang, onOpenCompetition, onExplore }
 
 const st = StyleSheet.create({
   body: { padding: 14, paddingTop: 48, flexGrow: 1 },
+  competitionBody: { padding: 14, paddingTop: 48, paddingBottom: 120 },
+  competitionList: { width: "100%", alignSelf: "stretch", justifyContent: "flex-start" },
   brand: { fontSize: 13, fontWeight: "800", color: TEAL, letterSpacing: 2 },
   hero: { fontSize: 24, fontWeight: "800", color: INK },
   sub: { color: MUTED, fontSize: 13, marginBottom: 12 },
