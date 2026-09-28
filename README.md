@@ -1,88 +1,94 @@
-Feedants Competition Module
+Absolutely. Here is a complete rewritten README, polished for an internship evaluator. It keeps your actual implementation details, clearly separates demo limitations from production architecture, and avoids overclaiming.
 
-A production-minded Competition Details and Registration module built for the Feedants Full-Stack Development Internship assignment.
+# Feedants Competition Module
+A production-minded **Competition Details and Registration module** built for the Feedants Full-Stack Development Internship technical assignment.
+The project implements the supplied Feedants competition design as a functional **React Native (Expo)** application backed by a **Node.js + Express.js REST API** and **MongoDB/Mongoose** data layer.
+> **Important:** This is not a static UI implementation. Competition data, registration state, capacity, lifecycle, dates, rewards, judging information, and participation state are served and computed by the backend.
+---
+## ✨ Overview
+The module provides a complete competition experience from discovery to participation and submission.
+### Core capabilities
+- Browse competitions across multiple categories
+- View detailed competition information
+- Display dynamically calculated competition states
+- Track registration deadlines and submission windows
+- Register for competitions
+- Enforce limited competition capacity
+- Prevent duplicate registrations
+- Display remaining spots dynamically
+- View judges and previous winners
+- View rewards and judging parameters
+- View competition rules and eligibility
+- Submit work during the permitted submission window
+- Track registration and submission status
+- Generate and use referral codes
+- Demonstrate the payment flow using a clearly labelled mock payment
+- Handle network and API failures
+- Display stale cached data explicitly when offline
+The flagship competition is **Feedants Classical Dance**, implemented from the supplied design reference.
+---
+# 🎯 Assignment Requirements Covered
+| Requirement | Implementation |
+|---|---|
+| React Native frontend | Expo + React Native |
+| Node.js backend | Express.js |
+| MongoDB database | MongoDB + Mongoose |
+| Dynamic competition data | Backend API and database |
+| Registration | Backend-controlled registration flow |
+| Limited capacity | Atomic MongoDB seat allocation |
+| Duplicate protection | Unique registration constraint |
+| Competition lifecycle | Server-side lifecycle calculation |
+| Submission | Registration + submission-window validation |
+| Concurrency | Atomic seat allocation + race handling |
+| API validation | Server-side validation and typed error responses |
+| Production considerations | Rate limiting, Helmet, CORS, idempotency and scalable API architecture |
+| Testing | 18 backend tests + Expo Doctor + Android/Web build verification |
+---
+# 🏗️ Architecture
+```text
+┌─────────────────────────────────┐
+│        React Native / Expo      │
+│                                 │
+│ Home / Explore / Competitions   │
+│ Competition Details / Profile   │
+└────────────────┬────────────────┘
+                 │
+                 │ REST API
+                 ▼
+┌─────────────────────────────────┐
+│        Node.js + Express        │
+│                                 │
+│ Competition APIs                │
+│ Registration                    │
+│ Submission                     │
+│ Payments                       │
+│ Referrals                      │
+│ Lifecycle                      │
+│ Validation                     │
+└────────────────┬────────────────┘
+                 │
+                 │ Mongoose
+                 ▼
+┌─────────────────────────────────┐
+│             MongoDB             │
+│                                 │
+│ Competitions                   │
+│ Registrations                  │
+│ Referrals                      │
+│ Testimonials                   │
+└─────────────────────────────────┘
 
-The project implements the supplied Feedants competition design as a functional React Native application backed by a Node.js + Express API and MongoDB/Mongoose data layer.
+Responsibility split
 
-Important: This is not a static UI implementation. Competition data, registration state, capacity, lifecycle, dates, rewards, judging information, and participation state are served and computed by the backend.
+The frontend is responsible for:
 
-⸻
-
-✨ Overview
-
-The module provides a complete competition experience:
-
-* Browse competitions
-* View detailed competition information
-* Track registration deadlines and lifecycle states
-* Register for competitions with capacity enforcement
-* Handle duplicate registrations safely
-* Display remaining spots dynamically
-* View judges, winners, rewards and competition rules
-* Submit work during the permitted submission window
-* Track registration/submission status
-* Refer and earn through backend-generated referral codes
-* Handle demo payments
-* Support multiple competition lifecycle states
-* Recover gracefully from network/API failures
-* Display stale cached data explicitly when offline
-
-The flagship competition is Feedants Classical Dance, based on the provided design reference.
-
-⸻
-
-🎯 Assignment Requirements Covered
-
-Requirement	Implementation
-React Native frontend	Expo + React Native
-Node.js backend	Express.js
-MongoDB database	Mongoose
-Dynamic competition data	Backend API + database
-Registration	Backend-controlled registration flow
-Limited capacity	Atomic MongoDB seat claim
-Duplicate protection	Unique registration constraint
-Competition lifecycle	Server-side lifecycle calculation
-Submission	Registration + date-window validation
-Concurrency	Atomic seat allocation + race handling
-API validation	Typed validation/error responses
-Production considerations	Rate limiting, Helmet, CORS, idempotency, scalable architecture
-Testing	18 backend tests + Expo Doctor + Android/Web builds
-
-⸻
-
-🏗️ Architecture
-
-┌───────────────────────────────┐
-│       React Native / Expo     │
-│                               │
-│ Home / Explore / Competitions │
-│ Competition Details / Profile │
-└───────────────┬───────────────┘
-                │ REST API
-                ▼
-┌───────────────────────────────┐
-│       Node.js + Express       │
-│                               │
-│ Competition APIs              │
-│ Registration                  │
-│ Submission                   │
-│ Payments                     │
-│ Referrals                    │
-│ Lifecycle                    │
-│ Validation                    │
-└───────────────┬───────────────┘
-                │ Mongoose
-                ▼
-┌───────────────────────────────┐
-│          MongoDB              │
-│                               │
-│ Competitions                 │
-│ Registrations                │
-│ Referrals                    │
-│ Testimonials                 │
-└───────────────────────────────┘
-
-The frontend does not own competition business rules.
+* Rendering UI
+* Navigation
+* User interactions
+* Local device identity
+* Displaying server responses
+* Countdown presentation
+* Stale-cache presentation
 
 The backend is responsible for:
 
@@ -95,6 +101,9 @@ The backend is responsible for:
 * Payment state
 * Server-side dates
 * Validation
+* Business rules
+
+This keeps business-critical rules outside the client.
 
 ⸻
 
@@ -177,7 +186,7 @@ Install:
 * npm
 * Expo Go for physical-device testing
 
-A local MongoDB installation is not required for development.
+A local MongoDB installation is not required for development because the project provides an in-memory MongoDB fallback.
 
 ⸻
 
@@ -215,27 +224,31 @@ Example:
 PORT=4000
 # Leave empty for the development in-memory fallback
 MONGODB_URI=
-# Optional
+# Optional comma-separated origins
 CORS_ORIGIN=
-# Reserved for production authentication
+# Reserved for production JWT authentication
 JWT_SECRET=
-# Optional Razorpay production credentials
+# Optional production Razorpay credentials
 RAZORPAY_KEY_ID=
 RAZORPAY_KEY_SECRET=
 
 Development database behavior
 
-If MONGODB_URI is empty:
+When MONGODB_URI is empty:
 
-MongoDB in-memory development fallback
-        ↓
-Seed competitions
-        ↓
-Start Express server
+Express Server
+      ↓
+mongodb-memory-server
+      ↓
+Seed competition data
+      ↓
+Start API
+
+The in-memory database is intended for local development and testing.
 
 Data is ephemeral and is reset when the backend process restarts.
 
-For production, MONGODB_URI is required.
+For production deployments, MONGODB_URI is required.
 
 ⸻
 
@@ -250,22 +263,20 @@ The API runs on:
 
 http://localhost:4000
 
-The server listens on all interfaces so a physical device can access it through the Mac’s LAN IP.
+The Express server listens on all interfaces, allowing a physical device on the same network to reach the API through the Mac’s LAN IP.
 
 ⸻
 
-📱 Running the React Native App
+📱 Running the React Native Application
 
-For a physical device, replace <LAN_IP> with the Mac’s local IP address.
+Physical device
+
+Replace <LAN_IP> with the Mac’s local network IP.
 
 cd mobile
 EXPO_PUBLIC_API_URL=http://<LAN_IP>:4000 npx expo start --clear
 
-Then scan the QR code using Expo Go.
-
-Web preview
-
-npx expo start --web
+Then scan the generated QR code using Expo Go.
 
 Important
 
@@ -275,29 +286,38 @@ http://localhost:4000
 
 from a physical phone.
 
+On a phone, localhost refers to the phone itself.
+
 Use:
 
 http://<LAN_IP>:4000
 
-because localhost on the phone refers to the phone itself.
+instead.
+
+⸻
+
+Web preview
+
+cd mobile
+npx expo start --web
 
 ⸻
 
 🌱 Seed Data
 
-The backend automatically seeds the development database on startup.
+The backend automatically seeds development data on startup.
 
-The flagship competition is:
+Flagship competition
 
 Feedants Classical Dance
 
-Prize Pool: ₹1,500
-Entry Fee: ₹99
-Capacity: 20
-Initial Booked Spots: 1
+Prize Pool:        ₹1,500
+Entry Fee:         ₹99
+Capacity:          20
+Initial Booked:    1
 Initial Spots Left: 19
 
-Additional demo competitions cover different lifecycle states:
+The implementation also includes additional competitions covering different lifecycle states:
 
 * Urban Photography Challenge
 * Indie Music Showcase
@@ -305,9 +325,9 @@ Additional demo competitions cover different lifecycle states:
 * Creative Writing Challenge
 * Monsoon Dance Fest
 
-This allows the application to demonstrate different competition states rather than relying on a single static competition.
+This provides multiple competition states for testing and demonstration.
 
-Manual seeding:
+Manual seeding
 
 cd server
 npm run seed
@@ -316,11 +336,15 @@ npm run seed
 
 🔄 Competition Lifecycle
 
-Competition state is calculated on the server, based on dates and capacity.
+Competition state is calculated on the server using competition dates and capacity.
 
 registration_open
         │
-        ├── capacity reached → full
+        ├── capacity reached
+        │
+        ▼
+       full
+registration_open
         │
         ▼
 registration_closed
@@ -334,9 +358,9 @@ submission_closed
         ▼
 result_declared
 
-The server determines the current state instead of relying on frontend hardcoded values.
+The frontend does not independently determine the competition’s business state.
 
-The flagship design contains overlapping registration and submission dates. Registration therefore retains precedence while its registration window remains open.
+The flagship design contains overlapping registration and submission dates. While registration remains within its allowed window, registration state takes precedence for the competition lifecycle while submission eligibility is evaluated independently.
 
 ⸻
 
@@ -373,42 +397,52 @@ Registration validates:
 
 🔒 Concurrency & Capacity
 
-A major requirement of the assignment is avoiding overselling when multiple users register concurrently.
+Preventing overselling is handled as a backend concern.
 
-The seat is claimed atomically using a MongoDB query equivalent to:
+A registration attempts to atomically claim a seat only when:
 
 bookedSpots < capacity
 AND
 registerBefore > currentTime
 
-followed by an atomic increment.
+The seat count is then incremented atomically.
 
-This means two requests cannot independently read the same available seat and both claim it.
+This avoids a simple:
 
-Additional protection includes:
+read → check → write
 
-* Partial unique registration constraint
-* Duplicate registration handling
+pattern where multiple concurrent requests could claim the same final seat.
+
+Additional protection
+
+The implementation also uses:
+
+* Unique registration constraint
 * Atomic $inc
+* Duplicate-registration handling
 * Seat rollback for duplicate-race cases
 * Idempotency keys
 
-Verified concurrency scenarios
+Verified scenarios
+
+Capacity race
 
 Capacity: 3
 Concurrent users: 10
-Expected:
+Result:
 3 successful registrations
 3 registration records
 bookedSpots = 3
 
-Same-user concurrent registration:
+Same-user race
 
-10 requests
+10 concurrent requests
         ↓
 1 registration
         ↓
 1 seat consumed
+
+These scenarios are covered by the backend test suite.
 
 ⸻
 
@@ -420,15 +454,15 @@ A submission is accepted only when:
 2. The competition is inside its submission window.
 3. The submission URL is valid.
 4. The file type is supported.
-5. The file size is within the configured limits.
+5. The file size is within the configured limit.
 
-Supported formats:
+Supported formats
 
 .mp4
 .mov
 .webm
 
-Maximum configured size:
+Maximum configured size
 
 500 MB
 
@@ -439,52 +473,55 @@ fileType
 fileSizeBytes
 submittedAt
 
-Current limitation
+Current implementation limitation
 
-The assignment implementation records and validates a submission URL and metadata.
+The assignment implementation validates and records the submission URL and metadata.
 
 It does not provision binary cloud storage.
 
-A production implementation would use signed upload URLs with S3/GCS and a media-processing pipeline.
+A production implementation would use signed S3/GCS upload URLs followed by media processing and storage.
 
 ⸻
 
 💳 Payment
 
-The reference design mentions Razorpay.
+The supplied reference mentions Razorpay.
 
-For this assignment, payments are intentionally implemented as:
+For this assignment, payment is intentionally implemented as:
 
-DEMO / MOCK payments
+DEMO / MOCK payment
 
 No real money is transferred.
 
-The backend owns the payment flow, and payment secrets are never exposed to React Native.
+The payment flow is backend-controlled, and payment secrets are never exposed to the React Native client.
 
-Production integration would include:
+Production payment flow
+
+A production implementation would add:
 
 * Razorpay Orders
-* Server-side verification
-* Webhook signature validation
+* Server-side payment verification
+* Webhook signature verification
 * Payment reconciliation
+* Failed-payment handling
 
 ⸻
 
 🔗 Referral System
 
-Each user can receive a backend-generated referral code.
+The application supports backend-generated referral codes.
 
-The referral flow supports:
+Features include:
 
-* Code generation
+* Referral code generation
 * Copy
-* Native sharing
+* Native share
 * Signup count
 * Earned credit
 
-Referral credit is granted only when a different user completes registration.
+Referral credit is granted only when a different user completes registration using the referral code.
 
-Copying or viewing a referral code does not generate rewards.
+Viewing, copying or sharing a referral code does not itself generate credit.
 
 Self-referrals are rejected.
 
@@ -506,33 +543,33 @@ POST	/api/payments/mock-checkout	Demo payment
 
 ⸻
 
-🧪 Testing
+🧪 Testing & Verification
 
-Backend:
+Backend
 
 cd server
 npm test
 
-Current suite:
+Current result:
 
 18 / 18 tests passing
 
-Coverage includes:
+The suite covers:
 
 * Health endpoint
 * Competition details
 * 404 handling
 * Authentication validation
-* All lifecycle states
+* Competition lifecycle states
 * Duplicate registration
 * Capacity enforcement
 * Concurrent registration
 * Same-user race conditions
-* Closed/full competition handling
+* Full/closed competitions
 * Submission validation
 * Submission authorization
 * Referral rules
-* Demo payment
+* Mock payment
 * Testimonials
 * Competition media
 * Participation endpoint
@@ -540,7 +577,7 @@ Coverage includes:
 
 ⸻
 
-Expo validation
+Expo Doctor
 
 cd mobile
 npx expo-doctor
@@ -549,15 +586,21 @@ Current result:
 
 21 / 21 checks passing
 
+⸻
+
 Web build
 
+cd mobile
 npx expo export --platform web
 
-Android build/export
+⸻
 
+Android build
+
+cd mobile
 npx expo export --platform android
 
-Both have been verified successfully.
+Both platform exports have been verified successfully.
 
 ⸻
 
@@ -565,33 +608,43 @@ Both have been verified successfully.
 
 Backend-owned business logic
 
-Competition rules are kept on the server so the client cannot independently decide:
+Business-critical decisions remain on the server.
+
+The client cannot independently decide:
 
 * Whether registration is open
 * Whether seats remain
-* Whether a user is registered
+* Whether the user is registered
 * Whether submission is allowed
 * Whether payment succeeded
 
+⸻
+
 Atomic registration
 
-MongoDB atomic operations are used for seat allocation rather than:
+Seat allocation uses an atomic database operation instead of a separate read/check/write sequence.
 
-read → check → write
+This is important for concurrent registrations.
 
-This prevents race-condition overselling.
+⸻
 
 Idempotency
 
-Registration supports idempotency keys so network retries and double taps do not consume multiple seats.
+Registration supports idempotency keys so repeated requests caused by double taps or network retries do not consume multiple seats.
+
+⸻
 
 Server-derived lifecycle
 
-Competition state is derived from server dates rather than hardcoded frontend state.
+Competition lifecycle is calculated from server-side dates and capacity rather than being hardcoded in the frontend.
+
+⸻
 
 Stale-cache labeling
 
-The mobile app can retain the last successful API response, but stale information is explicitly identified instead of being presented as live server truth.
+The mobile application can retain the most recent successful API response.
+
+When displayed offline, cached information is explicitly labelled as stale rather than being presented as current server data.
 
 ⸻
 
@@ -599,47 +652,72 @@ The mobile app can retain the last successful API response, but stale informatio
 
 In-memory development database
 
-Advantage: zero MongoDB setup for evaluation.
+Advantage
 
-Trade-off: data disappears when the backend process restarts.
+* Zero MongoDB setup for evaluation
+* Fast development and testing
 
-Production uses persistent MongoDB.
+Trade-off
+
+* Data is ephemeral
+* Restarting the development server resets the database
+
+Production deployments use persistent MongoDB.
+
+⸻
 
 Manual refresh
 
-The app re-fetches server state rather than maintaining WebSocket connections.
+The application re-fetches server state instead of maintaining WebSocket connections.
 
-Advantage: simpler architecture and fewer moving parts.
+Advantage
 
-Future: WebSocket/SSE updates for live competition counters.
+* Simpler implementation
+* Fewer infrastructure requirements
+
+Future improvement
+
+* WebSocket/SSE updates for live competition counters
+
+⸻
 
 URL-based submissions
 
-Advantage: fast and reliable for demonstrating the assignment flow.
+Advantage
 
-Trade-off: production requires actual cloud file storage and processing.
+* Simple and reliable for demonstrating the complete submission flow
+
+Trade-off
+
+* Production requires cloud storage and media processing
+
+⸻
 
 Demo authentication
 
-A device-generated user ID is used instead of a complete account/authentication system.
+A device-generated user ID is used instead of a full account system.
 
-Future: JWT access tokens, refresh-token rotation and account management.
+Future improvement
+
+* JWT authentication
+* Refresh-token rotation
+* Account management
 
 ⸻
 
 ⚠️ Known Limitations
 
-This assignment implementation intentionally contains several demo-grade components:
+The following components are intentionally demo-grade:
 
 * Payments are DEMO/MOCK only.
 * Submission storage records URLs and metadata rather than binary files.
 * Authentication uses a demo device ID rather than JWT.
-* Competition photos/videos are demo stand-ins.
+* Competition photos and videos are demo stand-ins.
 * Testimonials are seeded demo/sample content.
 * Development mode can use an in-memory MongoDB instance.
 * Live spot updates currently rely on API refresh rather than WebSockets.
 
-These limitations are isolated so they can be replaced by production services without changing the overall frontend architecture.
+These limitations are isolated so that production services can replace them without requiring a fundamental frontend redesign.
 
 ⸻
 
@@ -648,9 +726,9 @@ These limitations are isolated so they can be replaced by production services wi
 A production deployment could add:
 
 * MongoDB Atlas replica sets
-* Transactions for payment + registration workflows
+* Database transactions for critical multi-step workflows
 * JWT authentication and refresh-token rotation
-* Razorpay order/webhook verification
+* Razorpay order and webhook verification
 * S3/GCS signed uploads
 * Video transcoding and moderation
 * Redis/BullMQ background processing
@@ -660,7 +738,7 @@ A production deployment could add:
 * Analytics
 * CI/CD pipeline
 * Detox/Maestro end-to-end testing
-* Production-grade account management
+* Production account management
 
 ⸻
 
@@ -690,7 +768,7 @@ Submission status
   ↓
 Competitions / participation state
 
-The recording demonstrates that the module is a functional user flow rather than a static UI implementation.
+The recording demonstrates the complete user journey and verifies that the module is a functional application rather than a static UI.
 
 ⸻
 
@@ -710,12 +788,28 @@ The recording demonstrates that the module is a functional user flow rather than
 
 📌 Assumptions
 
-* Demo device authentication represents a real authenticated user for this assignment.
-* Competition values reproduce the supplied Feedants reference design.
-* Demo media represents the type of production media that would be provided by Feedants.
-* Payment is intentionally mocked because production Razorpay credentials are not available.
-* Submission URLs represent the upload result; binary cloud storage is a production extension.
+* Demo device authentication represents an authenticated user for this assignment.
+* Competition values reproduce the supplied Feedants design reference.
+* Demo media represents the type of production media that would be supplied by Feedants.
+* Payment is intentionally mocked because production payment credentials are not available.
+* Submission URLs represent the result of an upload; binary cloud storage is a production extension.
 * Server time is the source of truth for competition lifecycle decisions.
+
+⸻
+
+📦 Submission
+
+Source Code
+
+GitHub Repository
+
+⁠github.com/bhoomikabhatt05/feedants-competition-module
+
+Demo
+
+The submitted screen recording demonstrates:
+
+Competition Details → Registration → DEMO Payment → Registered State → Submission → Participation State
 
 ⸻
 
@@ -726,9 +820,8 @@ Feedants Competition Module
 Built as a Full-Stack Development Internship technical assignment.
 
 Frontend: React Native / Expo
-Backend: Node.js / Express
+Backend: Node.js / Express.js
 Database: MongoDB / Mongoose
 
-GitHub:
-
-https://github.com/bhoomikabhatt05/feedants-competition-module
+### One important note
+I intentionally **didn't claim that a persistent MongoDB instance is currently being used in your local demo**. Your actual setup uses `mongodb-memory-server` when `MONGODB_URI` is empty, and this README states that clearly. That's the safest and most accurate way to present it to the evaluator.
